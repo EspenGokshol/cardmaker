@@ -54,6 +54,15 @@
 
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .checks{display:flex;gap:20px;flex-wrap:wrap;}
+  .color-row{display:flex;gap:10px;align-items:center;}
+  .color-row input[type=color]{flex:none;width:46px;height:38px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;}
+  .color-row input[type=text]{flex:1;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.5px;}
+  .color-row input[type=text].bad{border-color:#c0392b;outline-color:#c0392b;}
+  .icon-results{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px;max-height:156px;overflow:auto;}
+  .icon-results button{aspect-ratio:1;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;padding:5px;display:flex;align-items:center;justify-content:center;}
+  .icon-results button.sel{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);}
+  .icon-results img{width:100%;height:100%;object-fit:contain;}
+  input[type=file]{width:100%;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ink);}
   .chk{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;cursor:pointer;}
   .chk input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;}
 
@@ -86,6 +95,8 @@
   .thumb{cursor:pointer;}
   .thumb-wrap.editing .thumb{outline:3px solid var(--gold);outline-offset:1px;}
   .print-sheet{display:none;}
+  .sitefoot{max-width:1180px;margin:0 28px 40px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.5;}
+  .sitefoot a{color:var(--muted);text-decoration:underline;}
   .disclaimer{position:relative;max-width:340px;width:100%;}
   .disc-head{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px 14px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink);cursor:pointer;}
   .disc-head .ico{flex:none;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:10px;font-style:italic;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;}
@@ -99,7 +110,7 @@
   .disc-body p:last-child{margin-bottom:0;}
 
   @media print{
-    .topbar,.panel,.actions,.queue,.disclaimer{display:none !important;}
+    .topbar,.panel,.actions,.queue,.disclaimer,.sitefoot{display:none !important;}
     .app{display:block;padding:0;}
     .stage{position:static;}
     .stage-card{filter:none;margin:0 auto;}
@@ -140,16 +151,40 @@
       </div>
 
       <div class="field" id="customFields" style="display:none;">
-        <div class="row2">
-          <div>
-            <label class="lab" for="f-color">Card colour</label>
-            <input type="color" id="f-color" value="#7C9BE0" style="width:100%;height:38px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;">
-          </div>
-          <div>
-            <label class="lab" for="f-label">Badge label</label>
-            <input type="text" id="f-label" placeholder="(optional)">
-          </div>
+        <label class="lab">Card colour</label>
+        <div class="color-row">
+          <input type="color" id="f-color" value="#7C9BE0" aria-label="Colour swatch">
+          <input type="text" id="f-hex" value="#7C9BE0" maxlength="7" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="#RRGGBB" aria-label="Hex colour code">
         </div>
+        <label class="lab" for="f-label" style="margin-top:14px;">Badge label</label>
+        <input type="text" id="f-label" placeholder="(optional)">
+      </div>
+
+      <div class="field">
+        <label class="lab">Artwork</label>
+        <div class="seg" id="artSeg">
+          <button data-v="auto" aria-pressed="true">Emblem</button>
+          <button data-v="icon" aria-pressed="false">Icon</button>
+          <button data-v="image" aria-pressed="false">Image</button>
+        </div>
+        <label class="chk" id="keepEmblemWrap" style="display:none;margin-top:10px;"><input type="checkbox" id="keepEmblem"> Keep emblem background</label>
+      </div>
+
+      <div class="field" id="iconPanel" style="display:none;">
+        <input type="text" id="iconSearch" placeholder="Search game-icons… (sword, potion, dice…)" spellcheck="false" autocomplete="off">
+        <div class="icon-results" id="iconResults"></div>
+        <p class="qhint" id="iconStatus" style="margin-top:8px;"></p>
+        <label class="chk" style="margin-top:10px;"><input type="checkbox" id="iconOwnColor"> Give the icon its own colour</label>
+        <div class="color-row" id="iconColorRow" style="display:none;margin-top:8px;">
+          <input type="color" id="iconColorSwatch" value="#333333" aria-label="Icon colour swatch">
+          <input type="text" id="iconColorHex" value="#333333" maxlength="7" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="#RRGGBB" aria-label="Icon hex colour">
+        </div>
+      </div>
+
+      <div class="field" id="imagePanel" style="display:none;">
+        <input type="file" id="imageFile" accept="image/*">
+        <label class="chk" style="margin-top:10px;"><input type="checkbox" id="imageContain"> Contain (don't crop)</label>
+        <p class="qhint" id="imageStatus" style="margin-top:8px;"></p>
       </div>
 
       <div class="field">
@@ -242,6 +277,10 @@
 
   <div class="print-sheet" id="printSheet" aria-hidden="true"></div>
 
+  <footer class="sitefoot">
+    Game icons from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, by their respective authors, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. Icon search powered by the <a href="https://iconify.design" target="_blank" rel="noopener">Iconify</a> API.
+  </footer>
+
   <div class="toast" id="toast"></div>
 
 <script>
@@ -285,34 +324,31 @@ const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g
 const up = s => esc(s).toUpperCase();
 
 /* ---- emblems ---- */
-function emblemStandard(c){
-  return `<div style="position:absolute;inset:0;overflow:hidden;">
-<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,${c.glow},transparent 66%);"></div>
-<div style="position:absolute;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,${c.ray} 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 16%,transparent 60%);mask:radial-gradient(circle,#000 16%,transparent 60%);"></div>
-<div style="position:absolute;top:50%;left:50%;width:120px;height:120px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid ${c.ringSoft};"></div>
+function emblemStandard(c, bgOnly){
+  const back = `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,${c.glow},transparent 66%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,${c.ray} 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 16%,transparent 60%);mask:radial-gradient(circle,#000 16%,transparent 60%);"></div>`;
+  const motif = `<div style="position:absolute;top:50%;left:50%;width:120px;height:120px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid ${c.ringSoft};"></div>
 <div style="position:absolute;top:50%;left:50%;width:86px;height:86px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid ${c.accent};box-shadow:0 0 14px ${c.glow};"></div>
-<div style="position:absolute;top:50%;left:50%;width:42px;height:42px;transform:translate(-50%,-50%) rotate(45deg);border-radius:9px;background:linear-gradient(135deg,${c.diaMid},${c.base} 60%,${c.deep});box-shadow:0 0 16px ${c.glow},inset 0 2px 5px rgba(255,255,255,.55);"></div>
-</div>`;
+<div style="position:absolute;top:50%;left:50%;width:42px;height:42px;transform:translate(-50%,-50%) rotate(45deg);border-radius:9px;background:linear-gradient(135deg,${c.diaMid},${c.base} 60%,${c.deep});box-shadow:0 0 16px ${c.glow},inset 0 2px 5px rgba(255,255,255,.55);"></div>`;
+  return `<div style="position:absolute;inset:0;overflow:hidden;">${back}${bgOnly?'':motif}</div>`;
 }
-function emblemUltimate(){
-  return `<div style="position:absolute;inset:0;overflow:hidden;">
-<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,rgba(232,199,102,.25),transparent 66%);"></div>
-<div style="position:absolute;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(201,162,75,.18) 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 16%,transparent 60%);mask:radial-gradient(circle,#000 16%,transparent 60%);"></div>
-<div style="position:absolute;top:50%;left:50%;width:120px;height:120px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(201,162,75,.3);"></div>
+function emblemUltimate(bgOnly){
+  const back = `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,rgba(232,199,102,.25),transparent 66%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(201,162,75,.18) 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 16%,transparent 60%);mask:radial-gradient(circle,#000 16%,transparent 60%);"></div>`;
+  const motif = `<div style="position:absolute;top:50%;left:50%;width:120px;height:120px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(201,162,75,.3);"></div>
 <div style="position:absolute;top:50%;left:50%;width:82px;height:82px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid #C9A24B;box-shadow:0 0 18px rgba(232,199,102,.5);"></div>
-<div style="position:absolute;top:50%;left:50%;width:38px;height:38px;transform:translate(-50%,-50%) rotate(45deg);border-radius:8px;background:linear-gradient(135deg,#F0DC8E,#C9A24B 60%,#8A6E28);box-shadow:0 0 20px rgba(232,199,102,.65),inset 0 2px 5px rgba(255,255,255,.45);"></div>
-</div>`;
+<div style="position:absolute;top:50%;left:50%;width:38px;height:38px;transform:translate(-50%,-50%) rotate(45deg);border-radius:8px;background:linear-gradient(135deg,#F0DC8E,#C9A24B 60%,#8A6E28);box-shadow:0 0 20px rgba(232,199,102,.65),inset 0 2px 5px rgba(255,255,255,.45);"></div>`;
+  return `<div style="position:absolute;inset:0;overflow:hidden;">${back}${bgOnly?'':motif}</div>`;
 }
-function emblemChallenge(c){
-  return `<div style="position:absolute;inset:0;overflow:hidden;">
-<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,${rgba(c.faded,0.5)},transparent 64%);"></div>
-<div style="position:absolute;top:50%;left:50%;width:240px;height:240px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,${c.ray} 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 14%,transparent 58%);mask:radial-gradient(circle,#000 14%,transparent 58%);"></div>
-<div style="position:absolute;top:50%;left:50%;width:84px;height:84px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid ${c.ringSoft};"></div>
+function emblemChallenge(c, bgOnly){
+  const back = `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,${rgba(c.faded,0.5)},transparent 64%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:240px;height:240px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,${c.ray} 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 14%,transparent 58%);mask:radial-gradient(circle,#000 14%,transparent 58%);"></div>`;
+  const motif = `<div style="position:absolute;top:50%;left:50%;width:84px;height:84px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid ${c.ringSoft};"></div>
 <div style="position:absolute;top:50%;left:50%;width:60px;height:60px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid ${c.accent};box-shadow:0 0 12px ${c.glow};"></div>
 <div style="position:absolute;top:50%;left:50%;width:64px;height:9px;border-radius:5px;transform:translate(-50%,-50%) rotate(45deg);background:linear-gradient(90deg,${c.light},${c.deep});box-shadow:0 0 8px ${c.glow};"></div>
 <div style="position:absolute;top:50%;left:50%;width:64px;height:9px;border-radius:5px;transform:translate(-50%,-50%) rotate(-45deg);background:linear-gradient(90deg,${c.deep},${c.light});"></div>
-<div style="position:absolute;top:50%;left:50%;width:16px;height:16px;transform:translate(-50%,-50%) rotate(45deg);border-radius:4px;background:linear-gradient(135deg,#FFF,${c.diaC});box-shadow:0 0 10px rgba(255,255,255,.7);"></div>
-</div>`;
+<div style="position:absolute;top:50%;left:50%;width:16px;height:16px;transform:translate(-50%,-50%) rotate(45deg);border-radius:4px;background:linear-gradient(135deg,#FFF,${c.diaC});box-shadow:0 0 10px rgba(255,255,255,.7);"></div>`;
+  return `<div style="position:absolute;inset:0;overflow:hidden;">${back}${bgOnly?'':motif}</div>`;
 }
 
 /* ---- card renderers ---- */
@@ -335,20 +371,32 @@ function footer(bg,col){
   const b = (state.showResh!==false) ? pill(bg,col,reshLabel()) : '';
   return `<div style="padding:10px 14px 13px;display:flex;justify-content:space-between;align-items:center;min-height:13px;"><div style="display:flex;gap:6px;">${a}${b}</div></div>`;
 }
+function artInner(c, h, emb, embBg, cardIconColor){
+  const bg = state.keepEmblem ? embBg : '';
+  if(state.artSource==='icon' && state.iconBody){
+    const col = (state.iconColorMode==='custom') ? state.iconColor : cardIconColor;
+    const sz = Math.round(h*0.64);
+    return bg+`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:${col};"><svg viewBox="${state.iconVB}" style="width:${sz}px;height:${sz}px;fill:currentColor;">${state.iconBody}</svg></div>`;
+  }
+  if(state.artSource==='image' && state.imgData){
+    return bg+`<img src="${state.imgData}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:${state.imgContain?'contain':'cover'};">`;
+  }
+  return emb;
+}
 
 function renderStandard(c){
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interior};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">${esc(state.category)}</div></div>${orbStd(c)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washA},${c.washB});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${emblemStandard(c)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${esc(state.effect)}</div></div>${footer(c.washA,c.deep)}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interior};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">${esc(state.category)}</div></div>${orbStd(c)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washA},${c.washB});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,148,emblemStandard(c),emblemStandard(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${esc(state.effect)}</div></div>${footer(c.washA,c.deep)}</div></div>`;
 }
 
 function renderUltimate(c){
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(155deg,#0F0D0C,#241F1B 55%,#0F0D0C);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 0 2px #C9A24B,inset 0 0 0 4px rgba(0,0,0,.6);position:relative;"><div style="height:100%;border-radius:12px;background:linear-gradient(165deg,#221E1B,#100E0D);color:#F3E9D2;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(201,162,75,.5);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeUlt()}<div style="font-family:'Anton',sans-serif;font-size:29px;line-height:.92;color:#F6ECD0;letter-spacing:.5px;text-shadow:0 0 14px rgba(232,199,102,.45);">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8C766;">&#x25C6; ${esc(state.category)} &#x25C6;</div></div>${orb(c,52)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,#2A2018,#100E0D);box-shadow:inset 0 0 0 1px rgba(201,162,75,.4);">${emblemUltimate()}</div><div style="margin:11px 14px 0;background:rgba(255,255,255,.07);border-radius:10px;border:1px solid rgba(201,162,75,.25);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#F3E9D2;">${esc(state.effect)}</div></div>${footer('rgba(201,162,75,.15)','#E8C766')}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(155deg,#0F0D0C,#241F1B 55%,#0F0D0C);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 0 2px #C9A24B,inset 0 0 0 4px rgba(0,0,0,.6);position:relative;"><div style="height:100%;border-radius:12px;background:linear-gradient(165deg,#221E1B,#100E0D);color:#F3E9D2;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(201,162,75,.5);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeUlt()}<div style="font-family:'Anton',sans-serif;font-size:29px;line-height:.92;color:#F6ECD0;letter-spacing:.5px;text-shadow:0 0 14px rgba(232,199,102,.45);">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8C766;">&#x25C6; ${esc(state.category)} &#x25C6;</div></div>${orb(c,52)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,#2A2018,#100E0D);box-shadow:inset 0 0 0 1px rgba(201,162,75,.4);">${artInner(c,148,emblemUltimate(),emblemUltimate(true),'#E8C766')}</div><div style="margin:11px 14px 0;background:rgba(255,255,255,.07);border-radius:10px;border:1px solid rgba(201,162,75,.25);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#F3E9D2;">${esc(state.effect)}</div></div>${footer('rgba(201,162,75,.15)','#E8C766')}</div></div>`;
 }
 
 function renderChallenge(c){
   const diff = {easy:['Easy',1], medium:['Medium',2], hard:['Hard',3]}[state.difficulty];
   let pips='';
   for(let i=0;i<3;i++){ pips += `<span style="flex:none;width:22px;height:7px;border-radius:4px;background:${i<diff[1]?c.accent:'rgba(0,0,0,.12)'};"></span>`; }
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interiorC};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">&#x2692; ${esc(state.category)}</div></div>${orb(c,55)}</div><div style="margin:8px 14px 0;display:flex;align-items:center;gap:9px;"><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.deep};">${diff[0]}</span>${pips}</div><div style="margin:10px 14px 0;height:100px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washAc},${c.washBc});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${emblemChallenge(c)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${esc(state.effect)}</div></div>${footer(c.washAc,c.deep)}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interiorC};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">&#x2692; ${esc(state.category)}</div></div>${orb(c,55)}</div><div style="margin:8px 14px 0;display:flex;align-items:center;gap:9px;"><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.deep};">${diff[0]}</span>${pips}</div><div style="margin:10px 14px 0;height:100px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washAc},${c.washBc});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,100,emblemChallenge(c),emblemChallenge(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${esc(state.effect)}</div></div>${footer(c.washAc,c.deep)}</div></div>`;
 }
 
 /* ---- state ---- */
@@ -356,7 +404,9 @@ const state = {
   style:'standard', type:'Normal', name:'Tackle', category:'Command Card',
   pack:'Anywhere', effect:'Point at a guy — he takes a drink with you.',
   reshuffle:true, difficulty:'easy',
-  customColor:'#7C9BE0', customLabel:'', showPack:true, showResh:true
+  customColor:'#7C9BE0', customLabel:'', showPack:true, showResh:true,
+  artSource:'auto', iconName:'', iconBody:'', iconVB:'0 0 512 512',
+  iconColorMode:'card', iconColor:'#333333', imgData:'', imgContain:false, keepEmblem:false
 };
 let currentType = state.type;
 
@@ -411,8 +461,98 @@ document.getElementById('f-name').oninput   = e=>{ state.name=e.target.value; re
 document.getElementById('f-cat').oninput    = e=>{ state.category=e.target.value; render(); };
 document.getElementById('f-pack').oninput   = e=>{ state.pack=e.target.value; render(); };
 document.getElementById('f-effect').oninput = e=>{ state.effect=e.target.value; render(); };
-document.getElementById('f-color').oninput  = e=>{ state.customColor=e.target.value; updateNoneChip(); render(); };
+function normHex(v){
+  if(v==null) return null;
+  v=String(v).trim().replace(/^#/,'');
+  if(/^[0-9a-fA-F]{3}$/.test(v)) v=v.split('').map(c=>c+c).join('');
+  return /^[0-9a-fA-F]{6}$/.test(v) ? '#'+v.toLowerCase() : null;
+}
+const colorInp=document.getElementById('f-color'), hexInp=document.getElementById('f-hex');
+colorInp.oninput = e=>{ state.customColor=e.target.value; hexInp.value=e.target.value.toUpperCase(); hexInp.classList.remove('bad'); updateNoneChip(); render(); };
+hexInp.oninput = e=>{
+  const h=normHex(e.target.value);
+  if(h){ hexInp.classList.remove('bad'); state.customColor=h; colorInp.value=h; updateNoneChip(); render(); }
+  else { hexInp.classList.add('bad'); }
+};
+hexInp.onblur = ()=>{ hexInp.value=(state.customColor||'#7C9BE0').toUpperCase(); hexInp.classList.remove('bad'); };
 document.getElementById('f-label').oninput  = e=>{ state.customLabel=e.target.value; render(); };
+
+/* ---- artwork: source toggle ---- */
+function toggleArt(){
+  document.getElementById('iconPanel').style.display  = state.artSource==='icon'  ? 'block' : 'none';
+  document.getElementById('imagePanel').style.display = state.artSource==='image' ? 'block' : 'none';
+  document.getElementById('keepEmblemWrap').style.display = state.artSource==='auto' ? 'none' : 'flex';
+}
+document.getElementById('artSeg').querySelectorAll('button').forEach(b=>{
+  b.onclick=()=>{ state.artSource=b.dataset.v; document.getElementById('artSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); toggleArt(); render(); };
+});
+document.getElementById('keepEmblem').onchange=e=>{ state.keepEmblem=e.target.checked; render(); };
+
+/* ---- artwork: icon picker (game-icons via Iconify API) ---- */
+const ICON_API='https://api.iconify.design';
+let searchTimer=null, searchSeq=0;
+function iconStatus(m){ document.getElementById('iconStatus').textContent=m||''; }
+async function doIconSearch(q){
+  q=(q||'').trim();
+  const results=document.getElementById('iconResults');
+  if(q.length<2){ results.innerHTML=''; iconStatus('Type at least 2 letters to search.'); return; }
+  iconStatus('Searching\u2026'); const seq=++searchSeq;
+  try{
+    const r=await fetch(ICON_API+'/search?query='+encodeURIComponent(q)+'&limit=64&prefixes=game-icons');
+    const data=await r.json();
+    if(seq!==searchSeq) return;
+    const names=(data.icons||[]).filter(n=>n.indexOf('game-icons:')===0);
+    if(!names.length){ results.innerHTML=''; iconStatus('No icons found \u2014 try another word.'); return; }
+    iconStatus('');
+    results.innerHTML=names.map(n=>'<button type="button" data-name="'+n+'" title="'+n.replace('game-icons:','')+'"><img loading="lazy" alt="" src="'+ICON_API+'/'+n+'.svg?height=30&color=%23555555"></button>').join('');
+    results.querySelectorAll('button').forEach(b=> b.onclick=()=>pickIcon(b.dataset.name,b));
+  }catch(e){ if(seq===searchSeq){ results.innerHTML=''; iconStatus('Couldn\u2019t reach the icon library \u2014 check your connection.'); } }
+}
+async function pickIcon(fullName, btn){
+  const short=fullName.replace('game-icons:','');
+  try{
+    const r=await fetch(ICON_API+'/game-icons.json?icons='+encodeURIComponent(short));
+    const data=await r.json();
+    const ic=data.icons&&data.icons[short];
+    if(!ic){ iconStatus('Could not load that icon.'); return; }
+    state.iconName=fullName; state.iconBody=ic.body;
+    state.iconVB='0 0 '+(ic.width||data.width||512)+' '+(ic.height||data.height||512);
+    document.querySelectorAll('#iconResults button').forEach(x=>x.classList.remove('sel'));
+    if(btn) btn.classList.add('sel');
+    iconStatus('Selected: '+short);
+    render();
+  }catch(e){ iconStatus('Could not load that icon.'); }
+}
+document.getElementById('iconSearch').oninput=e=>{ const v=e.target.value; clearTimeout(searchTimer); searchTimer=setTimeout(()=>doIconSearch(v),300); };
+
+const iconOwn=document.getElementById('iconOwnColor'), iconColorRow=document.getElementById('iconColorRow');
+const iconSwatch=document.getElementById('iconColorSwatch'), iconHex=document.getElementById('iconColorHex');
+iconOwn.onchange=e=>{ state.iconColorMode=e.target.checked?'custom':'card'; iconColorRow.style.display=e.target.checked?'flex':'none'; render(); };
+iconSwatch.oninput=e=>{ state.iconColor=e.target.value; iconHex.value=e.target.value.toUpperCase(); iconHex.classList.remove('bad'); render(); };
+iconHex.oninput=e=>{ const h=normHex(e.target.value); if(h){ iconHex.classList.remove('bad'); state.iconColor=h; iconSwatch.value=h; render(); } else iconHex.classList.add('bad'); };
+iconHex.onblur=()=>{ iconHex.value=(state.iconColor||'#333333').toUpperCase(); iconHex.classList.remove('bad'); };
+
+/* ---- artwork: image upload (auto-downscaled) ---- */
+function loadImageFile(file){
+  return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=fr.result; }; fr.onerror=rej; fr.readAsDataURL(file); });
+}
+async function processImage(file){
+  const im=await loadImageFile(file);
+  const max=400; let w=im.naturalWidth||im.width, h=im.naturalHeight||im.height;
+  if(!w||!h){ w=max; h=max; }
+  const sc=Math.min(1, max/Math.max(w,h)); w=Math.round(w*sc); h=Math.round(h*sc);
+  const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+  cv.getContext('2d').drawImage(im,0,0,w,h);
+  const mime=/png|webp|gif|svg/i.test(file.type)?'image/png':'image/jpeg';
+  return cv.toDataURL(mime, 0.85);
+}
+document.getElementById('imageFile').onchange=async e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const st=document.getElementById('imageStatus'); st.textContent='Processing image\u2026';
+  try{ state.imgData=await processImage(f); st.textContent='Image added.'; render(); }
+  catch(err){ st.textContent='Could not read that image.'; }
+};
+document.getElementById('imageContain').onchange=e=>{ state.imgContain=e.target.checked; render(); };
 document.getElementById('f-showpack').onchange = e=>{ state.showPack=e.target.checked; render(); };
 document.getElementById('f-showresh').onchange = e=>{ state.showResh=e.target.checked; render(); };
 
@@ -453,12 +593,22 @@ function applyState(qty){
   document.getElementById('f-effect').value=state.effect;
   document.getElementById('f-copies').value=qty;
   document.getElementById('f-color').value=state.customColor||'#7C9BE0';
+  document.getElementById('f-hex').value=(state.customColor||'#7C9BE0').toUpperCase();
+  document.getElementById('f-hex').classList.remove('bad');
   document.getElementById('f-label').value=state.customLabel||'';
   document.getElementById('f-showpack').checked=state.showPack!==false;
   document.getElementById('f-showresh').checked=state.showResh!==false;
   setSeg('styleSeg',state.style); setSeg('diffSeg',state.difficulty);
   [...grid.children].forEach(ch=>ch.setAttribute('aria-pressed', ch.dataset.v===state.type));
   sw.setAttribute('aria-checked',state.reshuffle); st.textContent=state.reshuffle?'Reshuffle':'One-shot';
+  setSeg('artSeg',state.artSource||'auto'); toggleArt();
+  iconOwn.checked = state.iconColorMode==='custom'; iconColorRow.style.display = iconOwn.checked?'flex':'none';
+  iconSwatch.value = state.iconColor||'#333333'; iconHex.value=(state.iconColor||'#333333').toUpperCase(); iconHex.classList.remove('bad');
+  document.getElementById('imageContain').checked = !!state.imgContain;
+  document.getElementById('keepEmblem').checked = !!state.keepEmblem;
+  document.getElementById('iconSearch').value=''; document.getElementById('iconResults').innerHTML='';
+  iconStatus(state.iconName?('Current: '+state.iconName.replace('game-icons:','')):'');
+  document.getElementById('imageStatus').textContent = state.imgData?'Image set.':'';
   toggleCustom(); updateNoneChip();
   render();
 }
@@ -472,6 +622,10 @@ function enterEdit(i){
   state.customLabel=state.customLabel||'';
   state.showPack=state.showPack!==false;
   state.showResh=state.showResh!==false;
+  state.artSource=state.artSource||'auto';
+  state.iconBody=state.iconBody||''; state.iconVB=state.iconVB||'0 0 512 512'; state.iconName=state.iconName||'';
+  state.iconColorMode=state.iconColorMode||'card'; state.iconColor=state.iconColor||'#333333';
+  state.imgData=state.imgData||''; state.imgContain=!!state.imgContain; state.keepEmblem=!!state.keepEmblem;
   applyState(queue[i].qty);
   document.getElementById('addBtn').style.display='none';
   document.getElementById('editControls').style.display='inline-flex';
@@ -554,6 +708,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') setDisc(false); }
 load();
 renderTray();
 toggleCustom();
+toggleArt();
 updateNoneChip();
 render();
 </script>
