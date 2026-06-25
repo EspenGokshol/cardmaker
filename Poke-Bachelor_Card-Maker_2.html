@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poke-Bachelor · Card Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Outfit:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#e7e5df; --panel:#faf9f7; --ink:#2b2622; --muted:#8a8378;
+    --line:#dcd8cf; --gold:#C9A24B; --gold-deep:#8A6E28;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;}
+
+  .topbar{display:flex;align-items:baseline;gap:14px;padding:22px 28px 14px;}
+  .topbar h1{font-family:'Anton',sans-serif;font-weight:400;font-size:30px;letter-spacing:1px;margin:0;text-transform:uppercase;}
+  .topbar p{margin:0;color:var(--muted);font-size:13px;}
+
+  .app{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start;padding:0 28px 40px;max-width:1180px;}
+  @media (max-width:880px){ .app{grid-template-columns:1fr;} }
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.06);}
+  .field{margin-bottom:16px;}
+  .field:last-child{margin-bottom:0;}
+  label.lab{display:block;font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+  input[type=text], textarea{width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 11px;font-family:'Outfit',sans-serif;font-size:14px;color:var(--ink);}
+  textarea{resize:vertical;min-height:74px;line-height:1.4;}
+  input:focus, textarea:focus{outline:2px solid var(--gold);outline-offset:0;border-color:var(--gold);}
+
+  /* segmented control */
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff;}
+  .seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;border-right:1px solid var(--line);}
+  .seg button:last-child{border-right:0;}
+  .seg button[aria-pressed=true]{background:var(--ink);color:#fff;}
+
+  /* type chips */
+  .types{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;}
+  .chip{cursor:pointer;border:2px solid transparent;border-radius:9px;padding:4px;text-align:center;background:#fff;}
+  .chip .sw{height:24px;border-radius:5px;}
+  .chip .nm{font-size:9px;font-weight:700;letter-spacing:.3px;color:var(--ink);margin-top:3px;display:block;text-transform:uppercase;}
+  .chip[aria-pressed=true]{border-color:var(--ink);}
+
+  /* toggle */
+  .toggle{display:flex;align-items:center;gap:10px;}
+  .switch{position:relative;width:46px;height:26px;flex:none;border-radius:20px;background:#cfc9bd;cursor:pointer;transition:background .15s;}
+  .switch[aria-checked=true]{background:var(--gold);}
+  .switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .15s;}
+  .switch[aria-checked=true] .knob{left:23px;}
+  .toggle .state{font-size:14px;font-weight:600;}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .checks{display:flex;gap:20px;flex-wrap:wrap;}
+  .chk{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;cursor:pointer;}
+  .chk input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;}
+
+  /* preview stage */
+  .stage{position:sticky;top:18px;display:flex;flex-direction:column;align-items:center;gap:18px;}
+  .stage-card{filter:drop-shadow(0 18px 36px rgba(0,0,0,.22));}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .btn{font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;letter-spacing:.3px;border-radius:9px;padding:11px 16px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff;}
+  .btn.alt{background:#fff;color:var(--ink);}
+  .btn:active{transform:translateY(1px);}
+  .copies{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);}
+  .copies input{width:54px;text-align:center;}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .toast.show{opacity:1;}
+
+  /* print queue */
+  .queue{max-width:1180px;margin:0 28px 48px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;}
+  .queue-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .qtitle{font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);}
+  .qtitle em{font-style:normal;background:var(--ink);color:#fff;border-radius:20px;padding:2px 9px;margin-left:6px;font-family:'Space Mono',monospace;font-size:12px;}
+  .qactions{display:flex;gap:10px;}
+  .tray{display:flex;flex-wrap:wrap;gap:14px;}
+  .thumb-wrap{width:74px;}
+  .thumb{position:relative;width:74px;height:103px;border-radius:5px;overflow:hidden;box-shadow:0 3px 8px rgba(0,0,0,.18);background:#fff;}
+  .thumb .card-mini{position:absolute;top:0;left:0;zoom:0.2042;pointer-events:none;}
+  .thumb .rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+  .thumb .qty{position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.62);color:#fff;font-family:'Space Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;}
+  .cap{font-size:10px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+  .qhint{color:var(--muted);font-size:13px;margin:2px 0 0;}
+  .thumb{cursor:pointer;}
+  .thumb-wrap.editing .thumb{outline:3px solid var(--gold);outline-offset:1px;}
+  .print-sheet{display:none;}
+
+  @media print{
+    .topbar,.panel,.actions,.queue{display:none !important;}
+    .app{display:block;padding:0;}
+    .stage{position:static;}
+    .stage-card{filter:none;margin:0 auto;}
+    @page{size:A4 portrait;margin:8mm;}
+    body{background:#fff;}
+    /* sheet mode: lay queued cards 3-up like the deck */
+    body.printing-sheet .stage{display:none !important;}
+    body.printing-sheet .print-sheet{
+      display:flex !important;flex-wrap:wrap;justify-content:center;gap:5mm 4mm;
+    }
+    body.printing-sheet .print-sheet > div{
+      zoom:0.64;page-break-inside:avoid;break-inside:avoid;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Card Maker</h1>
+    <p>Design one card at a time — it renders in your deck's exact style.</p>
+  </div>
+
+  <div class="app">
+    <!-- CONTROLS -->
+    <div class="panel">
+      <div class="field">
+        <label class="lab">Card style</label>
+        <div class="seg" id="styleSeg">
+          <button data-v="standard" aria-pressed="true">Standard</button>
+          <button data-v="ultimate" aria-pressed="false">Ultimate</button>
+          <button data-v="challenge" aria-pressed="false">Challenge</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lab">Type</label>
+        <div class="types" id="typeGrid"></div>
+      </div>
+
+      <div class="field" id="customFields" style="display:none;">
+        <div class="row2">
+          <div>
+            <label class="lab" for="f-color">Card colour</label>
+            <input type="color" id="f-color" value="#7C9BE0" style="width:100%;height:38px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;">
+          </div>
+          <div>
+            <label class="lab" for="f-label">Badge label</label>
+            <input type="text" id="f-label" placeholder="(optional)">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="f-name">Name</label>
+        <input type="text" id="f-name" value="Tackle">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label class="lab" for="f-cat">Category</label>
+          <input type="text" id="f-cat" value="Command Card">
+        </div>
+        <div class="field">
+          <label class="lab" for="f-pack">Pack / context</label>
+          <input type="text" id="f-pack" value="Anywhere">
+        </div>
+      </div>
+
+      <div class="field" id="diffField" style="display:none;">
+        <label class="lab">Difficulty</label>
+        <div class="seg" id="diffSeg">
+          <button data-v="easy" aria-pressed="true">Easy</button>
+          <button data-v="medium" aria-pressed="false">Medium</button>
+          <button data-v="hard" aria-pressed="false">Hard</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="f-effect">Effect text</label>
+        <textarea id="f-effect">Point at a guy — he takes a drink with you.</textarea>
+      </div>
+
+      <div class="field">
+        <label class="lab">Reshuffle after use?</label>
+        <div class="toggle">
+          <div class="switch" id="reshSwitch" role="switch" aria-checked="true" tabindex="0"><div class="knob"></div></div>
+          <span class="state" id="reshState">Reshuffle</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lab">Show on card</label>
+        <div class="checks">
+          <label class="chk"><input type="checkbox" id="f-showpack" checked> Pack / context</label>
+          <label class="chk"><input type="checkbox" id="f-showresh" checked> Reshuffle pill</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="stage">
+      <div class="stage-card" id="preview"></div>
+      <div class="actions">
+        <button class="btn" id="addBtn">Add to print</button>
+        <span id="editControls" style="display:none;gap:10px;align-items:center;">
+          <button class="btn" id="updateBtn">Update card</button>
+          <button class="btn alt" id="addNewBtn">Add as new</button>
+          <button class="btn alt" id="doneBtn">Done</button>
+        </span>
+        <button class="btn alt" id="printBtn">Print this card</button>
+        <button class="btn alt" id="copyBtn">Copy card HTML</button>
+        <span class="copies">Copies <input type="text" id="f-copies" value="1"></span>
+      </div>
+      <p id="editNote" class="qhint" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div class="queue" id="queueWrap">
+    <div class="queue-head">
+      <span class="qtitle">Print queue <em id="qcount">0</em></span>
+      <div class="qactions">
+        <button class="btn" id="printSheetBtn">Print sheet</button>
+        <button class="btn alt" id="clearBtn">Clear all</button>
+      </div>
+    </div>
+    <div class="tray" id="tray"></div>
+    <p class="qhint" id="qhint">No cards yet — build one above and press “Add to print.”</p>
+  </div>
+
+  <div class="print-sheet" id="printSheet" aria-hidden="true"></div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ---- colour engine (matches the deck's renderVals) ---- */
+const hx = h => { h = h.replace('#',''); return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16)); };
+const toHex = r => '#' + r.map(x=>Math.round(Math.max(0,Math.min(255,x))).toString(16).padStart(2,'0')).join('');
+const mix = (a,b,t) => { const A=hx(a),B=hx(b); return toHex(A.map((v,i)=>v+(B[i]-v)*t)); };
+const rgba = (a,al) => { const A=hx(a); return `rgba(${A[0]},${A[1]},${A[2]},${al})`; };
+
+const BASE = {
+  Normal:'#A99F77', Grass:'#5FA943', Flying:'#7C9BE0', Ground:'#C2913A', Poison:'#9B59B6', Fairy:'#E07F9E',
+  Psychic:'#D6557F', Dark:'#4B4B57', Ghost:'#6E5A9E', Water:'#3D8BD4', Steel:'#6F869A',
+  Fighting:'#C0392B', Electric:'#D9A521', Dragon:'#5A4FCF'
+};
+
+function colors(type){
+  const base = (type==='None') ? (state.customColor||'#7C9BE0') : BASE[type];
+  return {
+    base, accent:base,
+    deep: mix(base,'#000000',0.34),
+    light: mix(base,'#ffffff',0.14),
+    interior: mix(base,'#ffffff',0.94),
+    interiorC: mix(base,'#ffffff',0.95),
+    nameDark: mix(base,'#000000',0.54),
+    orbLight: mix(base,'#ffffff',0.42),
+    orbDeep: mix(base,'#000000',0.40),
+    washA: mix(base,'#ffffff',0.90),
+    washB: mix(base,'#ffffff',0.78),
+    washAc: mix(base,'#ffffff',0.88),
+    washBc: mix(base,'#ffffff',0.74),
+    glow: rgba(mix(base,'#ffffff',0.30),0.5),
+    ray: rgba(mix(base,'#000000',0.34),0.2),
+    ringSoft: rgba(base,0.24),
+    faded: mix(base,'#ffffff',0.36),
+    diaMid: mix(base,'#ffffff',0.50),
+    diaC: mix(base,'#ffffff',0.55)
+  };
+}
+
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const up = s => esc(s).toUpperCase();
+
+/* ---- emblems ---- */
+function emblemStandard(c){
+  return `<div style="position:absolute;inset:0;overflow:hidden;">
+<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,${c.glow},transparent 66%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,${c.ray} 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 16%,transparent 60%);mask:radial-gradient(circle,#000 16%,transparent 60%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:120px;height:120px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid ${c.ringSoft};"></div>
+<div style="position:absolute;top:50%;left:50%;width:86px;height:86px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid ${c.accent};box-shadow:0 0 14px ${c.glow};"></div>
+<div style="position:absolute;top:50%;left:50%;width:42px;height:42px;transform:translate(-50%,-50%) rotate(45deg);border-radius:9px;background:linear-gradient(135deg,${c.diaMid},${c.base} 60%,${c.deep});box-shadow:0 0 16px ${c.glow},inset 0 2px 5px rgba(255,255,255,.55);"></div>
+</div>`;
+}
+function emblemUltimate(){
+  return `<div style="position:absolute;inset:0;overflow:hidden;">
+<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,rgba(232,199,102,.25),transparent 66%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(201,162,75,.18) 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 16%,transparent 60%);mask:radial-gradient(circle,#000 16%,transparent 60%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:120px;height:120px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(201,162,75,.3);"></div>
+<div style="position:absolute;top:50%;left:50%;width:82px;height:82px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid #C9A24B;box-shadow:0 0 18px rgba(232,199,102,.5);"></div>
+<div style="position:absolute;top:50%;left:50%;width:38px;height:38px;transform:translate(-50%,-50%) rotate(45deg);border-radius:8px;background:linear-gradient(135deg,#F0DC8E,#C9A24B 60%,#8A6E28);box-shadow:0 0 20px rgba(232,199,102,.65),inset 0 2px 5px rgba(255,255,255,.45);"></div>
+</div>`;
+}
+function emblemChallenge(c){
+  return `<div style="position:absolute;inset:0;overflow:hidden;">
+<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,${rgba(c.faded,0.5)},transparent 64%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:240px;height:240px;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,${c.ray} 0 3.4deg,transparent 3.4deg 9deg);-webkit-mask:radial-gradient(circle,#000 14%,transparent 58%);mask:radial-gradient(circle,#000 14%,transparent 58%);"></div>
+<div style="position:absolute;top:50%;left:50%;width:84px;height:84px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid ${c.ringSoft};"></div>
+<div style="position:absolute;top:50%;left:50%;width:60px;height:60px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid ${c.accent};box-shadow:0 0 12px ${c.glow};"></div>
+<div style="position:absolute;top:50%;left:50%;width:64px;height:9px;border-radius:5px;transform:translate(-50%,-50%) rotate(45deg);background:linear-gradient(90deg,${c.light},${c.deep});box-shadow:0 0 8px ${c.glow};"></div>
+<div style="position:absolute;top:50%;left:50%;width:64px;height:9px;border-radius:5px;transform:translate(-50%,-50%) rotate(-45deg);background:linear-gradient(90deg,${c.deep},${c.light});"></div>
+<div style="position:absolute;top:50%;left:50%;width:16px;height:16px;transform:translate(-50%,-50%) rotate(45deg);border-radius:4px;background:linear-gradient(135deg,#FFF,${c.diaC});box-shadow:0 0 10px rgba(255,255,255,.7);"></div>
+</div>`;
+}
+
+/* ---- card renderers ---- */
+function typeLabel(){ return (state.type==='None') ? (state.customLabel||'') : state.type; }
+function orbInner(){ const t=typeLabel(); return t ? `<span style="font-size:8.5px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.95);">${up(t)}</span>` : ''; }
+function orb(c, mid){
+  return `<div style="width:48px;height:48px;border-radius:50%;flex:none;background:radial-gradient(circle at 32% 28%,${c.orbLight},${c.base} ${mid}%,${c.orbDeep});box-shadow:inset 0 -3px 7px rgba(0,0,0,.4),0 0 12px ${c.glow};display:flex;align-items:center;justify-content:center;">${orbInner()}</div>`;
+}
+function orbStd(c){
+  return `<div style="width:48px;height:48px;border-radius:50%;flex:none;background:radial-gradient(circle at 32% 28%,${c.orbLight},${c.base} 55%,${c.orbDeep});box-shadow:inset 0 -3px 7px rgba(0,0,0,.3),0 2px 5px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;">${orbInner()}</div>`;
+}
+function badgeStd(c){ const t=typeLabel(); return t ? `<div style="align-self:flex-start;background:${c.deep};color:#fff;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:6px;">${esc(t)}</div>` : ''; }
+function badgeUlt(){ const t=typeLabel(); return t ? `<div style="align-self:flex-start;background:linear-gradient(135deg,#E8C766,#B8902F);color:#221E1B;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:6px;">${esc(t)}</div>` : ''; }
+function pill(bg,col,txt){
+  return `<span style="font-size:9.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:4px 9px;border-radius:20px;background:${bg};color:${col};">${esc(txt)}</span>`;
+}
+function reshLabel(){ return state.reshuffle ? 'Reshuffle' : 'No reshuffle'; }
+function footer(bg,col){
+  const a = (state.showPack!==false) ? pill(bg,col,state.pack) : '';
+  const b = (state.showResh!==false) ? pill(bg,col,reshLabel()) : '';
+  return `<div style="padding:10px 14px 13px;display:flex;justify-content:space-between;align-items:center;min-height:13px;"><div style="display:flex;gap:6px;">${a}${b}</div></div>`;
+}
+
+function renderStandard(c){
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interior};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">${esc(state.category)}</div></div>${orbStd(c)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washA},${c.washB});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${emblemStandard(c)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${esc(state.effect)}</div></div>${footer(c.washA,c.deep)}</div></div>`;
+}
+
+function renderUltimate(c){
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(155deg,#0F0D0C,#241F1B 55%,#0F0D0C);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 0 2px #C9A24B,inset 0 0 0 4px rgba(0,0,0,.6);position:relative;"><div style="height:100%;border-radius:12px;background:linear-gradient(165deg,#221E1B,#100E0D);color:#F3E9D2;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(201,162,75,.5);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeUlt()}<div style="font-family:'Anton',sans-serif;font-size:29px;line-height:.92;color:#F6ECD0;letter-spacing:.5px;text-shadow:0 0 14px rgba(232,199,102,.45);">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8C766;">&#x25C6; ${esc(state.category)} &#x25C6;</div></div>${orb(c,52)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,#2A2018,#100E0D);box-shadow:inset 0 0 0 1px rgba(201,162,75,.4);">${emblemUltimate()}</div><div style="margin:11px 14px 0;background:rgba(255,255,255,.07);border-radius:10px;border:1px solid rgba(201,162,75,.25);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#F3E9D2;">${esc(state.effect)}</div></div>${footer('rgba(201,162,75,.15)','#E8C766')}</div></div>`;
+}
+
+function renderChallenge(c){
+  const diff = {easy:['Easy',1], medium:['Medium',2], hard:['Hard',3]}[state.difficulty];
+  let pips='';
+  for(let i=0;i<3;i++){ pips += `<span style="flex:none;width:22px;height:7px;border-radius:4px;background:${i<diff[1]?c.accent:'rgba(0,0,0,.12)'};"></span>`; }
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interiorC};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">&#x2692; ${esc(state.category)}</div></div>${orb(c,55)}</div><div style="margin:8px 14px 0;display:flex;align-items:center;gap:9px;"><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.deep};">${diff[0]}</span>${pips}</div><div style="margin:10px 14px 0;height:100px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washAc},${c.washBc});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${emblemChallenge(c)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${esc(state.effect)}</div></div>${footer(c.washAc,c.deep)}</div></div>`;
+}
+
+/* ---- state ---- */
+const state = {
+  style:'standard', type:'Normal', name:'Tackle', category:'Command Card',
+  pack:'Anywhere', effect:'Point at a guy — he takes a drink with you.',
+  reshuffle:true, difficulty:'easy',
+  customColor:'#7C9BE0', customLabel:'', showPack:true, showResh:true
+};
+let currentType = state.type;
+
+function cardHTML(){
+  currentType = state.type;
+  const c = colors(state.type);
+  if(state.style==='ultimate') return renderUltimate(c);
+  if(state.style==='challenge') return renderChallenge(c);
+  return renderStandard(c);
+}
+function cardHTMLFor(st){
+  const prev=JSON.parse(JSON.stringify(state)), prevType=currentType;
+  Object.assign(state, st); currentType=state.type;
+  const h=cardHTML();
+  Object.assign(state, prev); currentType=prevType;
+  return h;
+}
+function render(){
+  document.getElementById('preview').innerHTML = cardHTML();
+  document.getElementById('diffField').style.display = (state.style==='challenge') ? 'block' : 'none';
+}
+
+/* ---- build type chips ---- */
+const grid = document.getElementById('typeGrid');
+[...Object.keys(BASE),'None'].forEach(t=>{
+  const el = document.createElement('div');
+  el.className='chip'; el.setAttribute('aria-pressed', t===state.type);
+  el.dataset.v=t;
+  const sw = (t==='None') ? 'background:linear-gradient(160deg,#cfcabf,#6f6a60);'
+                          : (()=>{ const c=colors(t); return `background:linear-gradient(160deg,${c.light},${c.deep});`; })();
+  el.innerHTML = `<div class="sw" style="${sw}"></div><span class="nm">${t}</span>`;
+  el.onclick=()=>{ state.type=t; [...grid.children].forEach(ch=>ch.setAttribute('aria-pressed', ch.dataset.v===t)); toggleCustom(); render(); };
+  grid.appendChild(el);
+});
+function toggleCustom(){ document.getElementById('customFields').style.display = (state.type==='None') ? 'block' : 'none'; }
+function updateNoneChip(){
+  const el=[...grid.children].find(ch=>ch.dataset.v==='None'); if(!el) return;
+  const c=colors('None'); el.querySelector('.sw').style.background=`linear-gradient(160deg,${c.light},${c.deep})`;
+}
+
+/* ---- wire controls ---- */
+function seg(id, key){
+  const box=document.getElementById(id);
+  box.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{ state[key]=b.dataset.v; box.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); render(); };
+  });
+}
+seg('styleSeg','style');
+seg('diffSeg','difficulty');
+
+document.getElementById('f-name').oninput   = e=>{ state.name=e.target.value; render(); };
+document.getElementById('f-cat').oninput    = e=>{ state.category=e.target.value; render(); };
+document.getElementById('f-pack').oninput   = e=>{ state.pack=e.target.value; render(); };
+document.getElementById('f-effect').oninput = e=>{ state.effect=e.target.value; render(); };
+document.getElementById('f-color').oninput  = e=>{ state.customColor=e.target.value; updateNoneChip(); render(); };
+document.getElementById('f-label').oninput  = e=>{ state.customLabel=e.target.value; render(); };
+document.getElementById('f-showpack').onchange = e=>{ state.showPack=e.target.checked; render(); };
+document.getElementById('f-showresh').onchange = e=>{ state.showResh=e.target.checked; render(); };
+
+const sw=document.getElementById('reshSwitch'), st=document.getElementById('reshState');
+function toggleResh(){ state.reshuffle=!state.reshuffle; sw.setAttribute('aria-checked',state.reshuffle); st.textContent = state.reshuffle?'Reshuffle':'One-shot'; render(); }
+sw.onclick=toggleResh;
+sw.onkeydown=e=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); toggleResh(); } };
+
+/* ---- actions ---- */
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1700); }
+
+document.getElementById('printBtn').onclick = ()=> window.print();
+
+document.getElementById('copyBtn').onclick = ()=>{
+  let n = parseInt(document.getElementById('f-copies').value,10); if(!(n>=1)) n=1;
+  const html = Array(n).fill(cardHTML()).join('\n');
+  navigator.clipboard.writeText(html).then(
+    ()=> toast(n>1 ? `Copied ${n} copies — paste into your deck file` : 'Copied — paste into your deck file'),
+    ()=> toast('Copy failed — select the preview and copy manually')
+  );
+};
+
+/* ---- print queue ---- */
+let queue = [];
+function readCopies(){ const n=parseInt(document.getElementById('f-copies').value,10); return (n>=1&&n<=99)?n:1; }
+function save(){ try{ localStorage.setItem('pbq', JSON.stringify(queue)); }catch(e){} }
+function load(){ try{ const r=localStorage.getItem('pbq'); if(r){ queue = JSON.parse(r)||[]; } }catch(e){ queue=[]; } }
+function total(){ return queue.reduce((s,it)=>s+it.qty,0); }
+
+let editingIndex = null;
+
+function setSeg(id,val){ document.getElementById(id).querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===val)); }
+
+function applyState(qty){
+  document.getElementById('f-name').value=state.name;
+  document.getElementById('f-cat').value=state.category;
+  document.getElementById('f-pack').value=state.pack;
+  document.getElementById('f-effect').value=state.effect;
+  document.getElementById('f-copies').value=qty;
+  document.getElementById('f-color').value=state.customColor||'#7C9BE0';
+  document.getElementById('f-label').value=state.customLabel||'';
+  document.getElementById('f-showpack').checked=state.showPack!==false;
+  document.getElementById('f-showresh').checked=state.showResh!==false;
+  setSeg('styleSeg',state.style); setSeg('diffSeg',state.difficulty);
+  [...grid.children].forEach(ch=>ch.setAttribute('aria-pressed', ch.dataset.v===state.type));
+  sw.setAttribute('aria-checked',state.reshuffle); st.textContent=state.reshuffle?'Reshuffle':'One-shot';
+  toggleCustom(); updateNoneChip();
+  render();
+}
+
+function enterEdit(i){
+  if(!queue[i].state){ toast('This card was saved before editing existed — re-add it to edit.'); return; }
+  editingIndex=i;
+  Object.assign(state, JSON.parse(JSON.stringify(queue[i].state)));
+  if(!state.type) state.type='Normal';
+  state.customColor=state.customColor||'#7C9BE0';
+  state.customLabel=state.customLabel||'';
+  state.showPack=state.showPack!==false;
+  state.showResh=state.showResh!==false;
+  applyState(queue[i].qty);
+  document.getElementById('addBtn').style.display='none';
+  document.getElementById('editControls').style.display='inline-flex';
+  const note=document.getElementById('editNote');
+  note.style.display='block';
+  note.textContent='Editing \u201C'+(state.name||'Untitled')+'\u201D (#'+(i+1)+') \u2014 press Update to save changes.';
+  renderTray();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function exitEdit(){
+  editingIndex=null;
+  document.getElementById('addBtn').style.display='';
+  document.getElementById('editControls').style.display='none';
+  document.getElementById('editNote').style.display='none';
+  renderTray();
+}
+
+function renderTray(){
+  const tray=document.getElementById('tray');
+  document.getElementById('qcount').textContent=total();
+  document.getElementById('qhint').style.display=queue.length?'none':'block';
+  tray.innerHTML = queue.map((it,i)=>{
+    const html = it.state ? cardHTMLFor(it.state) : (it.html||'');
+    const name = it.state ? it.state.name : (it.label||'Untitled');
+    const cap=esc(name||'Untitled'), capAttr=cap.replace(/"/g,'&quot;');
+    return '<div class="thumb-wrap'+(i===editingIndex?' editing':'')+'"><div class="thumb" data-edit="'+i+'"><div class="card-mini">'+html+'</div>'
+      + '<button class="rm" title="Remove" data-i="'+i+'">&times;</button>'
+      + (it.qty>1?'<span class="qty">&times;'+it.qty+'</span>':'')
+      + '</div><div class="cap" title="'+capAttr+'">'+cap+'</div></div>';
+  }).join('');
+  tray.querySelectorAll('.thumb').forEach(t=> t.onclick=()=> enterEdit(+t.dataset.edit));
+  tray.querySelectorAll('.rm').forEach(b=> b.onclick=(e)=>{
+    e.stopPropagation();
+    const i=+b.dataset.i;
+    queue.splice(i,1);
+    if(editingIndex===i){ save(); exitEdit(); return; }
+    if(editingIndex!==null && i<editingIndex) editingIndex--;
+    save(); renderTray();
+  });
+}
+
+document.getElementById('addBtn').onclick=()=>{
+  queue.push({ state:JSON.parse(JSON.stringify(state)), qty:readCopies() });
+  save(); renderTray();
+  toast('Added \u2014 '+total()+' card'+(total()!==1?'s':'')+' in queue');
+};
+document.getElementById('updateBtn').onclick=()=>{
+  if(editingIndex===null) return;
+  queue[editingIndex]={ state:JSON.parse(JSON.stringify(state)), qty:readCopies() };
+  save(); renderTray();
+  document.getElementById('editNote').textContent='Saved changes to \u201C'+(state.name||'Untitled')+'\u201D (#'+(editingIndex+1)+').';
+  toast('Card updated');
+};
+document.getElementById('addNewBtn').onclick=()=>{
+  queue.push({ state:JSON.parse(JSON.stringify(state)), qty:readCopies() });
+  save(); exitEdit();
+  toast('Added as new \u2014 '+total()+' in queue');
+};
+document.getElementById('doneBtn').onclick=exitEdit;
+
+document.getElementById('clearBtn').onclick=()=>{
+  if(!queue.length) return;
+  queue=[]; save(); exitEdit(); toast('Queue cleared');
+};
+document.getElementById('printSheetBtn').onclick=()=>{
+  if(!queue.length){ toast('Queue is empty — add a card first'); return; }
+  document.getElementById('printSheet').innerHTML = queue.flatMap(it=>Array(it.qty).fill(it.state?cardHTMLFor(it.state):(it.html||''))).join('');
+  document.body.classList.add('printing-sheet');
+  window.print();
+};
+window.addEventListener('afterprint', ()=> document.body.classList.remove('printing-sheet'));
+
+load();
+renderTray();
+toggleCustom();
+updateNoneChip();
+render();
+</script>
+</body>
+</html>
