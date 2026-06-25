@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Poke-Bachelor · Card Maker</title>
+<title>Custom cards · Card Maker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Outfit:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -86,9 +86,20 @@
   .thumb{cursor:pointer;}
   .thumb-wrap.editing .thumb{outline:3px solid var(--gold);outline-offset:1px;}
   .print-sheet{display:none;}
+  .disclaimer{position:relative;max-width:340px;width:100%;}
+  .disc-head{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px 14px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink);cursor:pointer;}
+  .disc-head .ico{flex:none;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:10px;font-style:italic;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;}
+  .disc-head .chev{margin-left:auto;transition:transform .2s ease;font-size:10px;color:var(--muted);}
+  .disclaimer.open .disc-head .chev{transform:rotate(180deg);}
+  .disc-body{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.2);padding:14px 16px;color:var(--muted);font-size:12px;line-height:1.55;text-align:left;
+    opacity:0;visibility:hidden;transform:translateY(-6px) scale(.98);transform-origin:top center;
+    transition:opacity .18s ease, transform .18s ease, visibility .18s;}
+  .disclaimer.open .disc-body{opacity:1;visibility:visible;transform:translateY(0) scale(1);}
+  .disc-body p{margin:0 0 7px;}
+  .disc-body p:last-child{margin-bottom:0;}
 
   @media print{
-    .topbar,.panel,.actions,.queue{display:none !important;}
+    .topbar,.panel,.actions,.queue,.disclaimer{display:none !important;}
     .app{display:block;padding:0;}
     .stage{position:static;}
     .stage-card{filter:none;margin:0 auto;}
@@ -203,6 +214,17 @@
         <span class="copies">Copies <input type="text" id="f-copies" value="1"></span>
       </div>
       <p id="editNote" class="qhint" style="display:none;"></p>
+
+      <div class="disclaimer" id="disclaimer">
+        <button class="disc-head" id="discToggle" type="button" aria-expanded="false" aria-controls="discBody">
+          <span class="ico">i</span> Your data stays yours <span class="chev">&#x25BE;</span>
+        </button>
+        <div class="disc-body" id="discBody">
+          <p>Nothing you type or design is collected, tracked, or sent to any server. There's no account, no analytics, no cookies.</p>
+          <p>Your work in progress — the print queue — is saved locally in this browser so it's still here next time you visit. It never leaves your device, and clearing your browser data (or switching browser or device) starts you fresh.</p>
+          <p>The only request the page makes to the outside is to Google Fonts, to load the typefaces.</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -521,6 +543,13 @@ document.getElementById('printSheetBtn').onclick=()=>{
   window.print();
 };
 window.addEventListener('afterprint', ()=> document.body.classList.remove('printing-sheet'));
+
+/* ---- disclaimer infobox ---- */
+const disc=document.getElementById('disclaimer'), discToggle=document.getElementById('discToggle');
+function setDisc(open){ disc.classList.toggle('open',open); discToggle.setAttribute('aria-expanded',open); }
+discToggle.addEventListener('click', e=>{ e.stopPropagation(); setDisc(!disc.classList.contains('open')); });
+document.addEventListener('click', e=>{ if(!disc.contains(e.target)) setDisc(false); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') setDisc(false); });
 
 load();
 renderTray();
