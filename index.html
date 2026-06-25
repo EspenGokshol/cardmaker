@@ -20,8 +20,44 @@
   .topbar h1{font-family:'Anton',sans-serif;font-weight:400;font-size:30px;letter-spacing:1px;margin:0;text-transform:uppercase;}
   .topbar p{margin:0;color:var(--muted);font-size:13px;}
 
-  .app{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start;padding:0 28px 40px;max-width:1180px;}
-  @media (max-width:880px){ .app{grid-template-columns:1fr;} }
+  .app{display:grid;grid-template-columns:380px minmax(0,1fr);gap:24px;align-items:start;padding:0 28px 40px;max-width:1180px;}
+  .app .queue{grid-column:1 / -1;}
+  @media (min-width:1300px){
+    .app{grid-template-columns:360px minmax(0,1fr) 360px;max-width:1560px;}
+    .app .queue{grid-column:auto;}
+  }
+  @media (max-width:880px){
+    .app{display:block;padding:0 16px 26px;}
+    .stage{position:static !important;}
+    .panel,.stage,.queue{display:none !important;}
+    body.m-editor  .panel{display:block !important;}
+    body.m-preview .stage{display:flex !important;}
+    body.m-queue   .stage{display:flex !important;}
+    body.m-queue   .queue{display:block !important;}
+    /* Preview tab: card + all compose buttons */
+    body.m-preview #addBtn,
+    body.m-preview #printBtn,
+    body.m-preview #copyBtn{display:inline-block !important;}
+    body.m-preview .copies{display:flex !important;}
+    body.m-preview #editControls{display:none !important;}
+    body.m-preview #editNote{display:none !important;}
+    /* Queue tab: card + only the edit buttons, plus the queue list */
+    body.m-queue #addBtn,
+    body.m-queue #printBtn,
+    body.m-queue #copyBtn,
+    body.m-queue .copies{display:none !important;}
+    body.m-queue #editControls{display:inline-flex !important;}
+    body.m-queue .disclaimer{display:none !important;}
+    body.m-editor{padding-bottom:calc(128px + env(safe-area-inset-bottom)) !important;}
+    body.m-editor .editor-bar{display:flex;position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:190;gap:10px;justify-content:center;padding:10px 16px;background:#fff;border-top:1px solid var(--line);box-shadow:0 -6px 16px rgba(0,0,0,.06);}
+    body.m-editor .editor-bar .btn{flex:1;max-width:200px;}
+    body{padding-bottom:74px;}
+    nav.mobile-tabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:200;background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.07);padding-bottom:env(safe-area-inset-bottom);}
+    .mtab{flex:1;border:0;background:none;padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'Outfit',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;}
+    .mtab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .mtab[aria-selected=true]{color:var(--ink);}
+    .mtab em{font-style:normal;background:var(--gold);color:#fff;border-radius:10px;padding:0 5px;font-size:9px;margin-left:3px;}
+  }
 
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.06);}
   .field{margin-bottom:16px;}
@@ -70,16 +106,21 @@
   .stage{position:sticky;top:18px;display:flex;flex-direction:column;align-items:center;gap:18px;}
   .stage-card{filter:drop-shadow(0 18px 36px rgba(0,0,0,.22));}
   .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  #editControls{display:none;}
+  #editNote{display:none;}
+  body.editing #addBtn{display:none;}
+  body.editing #editControls{display:inline-flex;}
+  body.editing #editNote{display:block;}
   .btn{font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;letter-spacing:.3px;border-radius:9px;padding:11px 16px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff;}
   .btn.alt{background:#fff;color:var(--ink);}
   .btn:active{transform:translateY(1px);}
   .copies{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);}
   .copies input{width:54px;text-align:center;}
-  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;}
-  .toast.show{opacity:1;}
+  .toast{position:fixed;top:calc(16px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-14px);z-index:300;background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s ease, transform .2s ease;}
+  .toast.show{opacity:1;transform:translate(-50%,0);}
 
   /* print queue */
-  .queue{max-width:1180px;margin:0 28px 48px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;}
+  .queue{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;}
   .queue-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
   .qtitle{font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);}
   .qtitle em{font-style:normal;background:var(--ink);color:#fff;border-radius:20px;padding:2px 9px;margin-left:6px;font-family:'Space Mono',monospace;font-size:12px;}
@@ -95,6 +136,11 @@
   .thumb{cursor:pointer;}
   .thumb-wrap.editing .thumb{outline:3px solid var(--gold);outline-offset:1px;}
   .print-sheet{display:none;}
+  .mobile-tabs{display:none;}
+  .editor-bar{display:none;}
+  #ebUpdate,#ebAddNew{display:none;}
+  body.editing #ebAdd{display:none;}
+  body.editing #ebUpdate,body.editing #ebAddNew{display:inline-block;}
   .sitefoot{max-width:1180px;margin:0 28px 40px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.5;}
   .sitefoot a{color:var(--muted);text-decoration:underline;}
   .disclaimer{position:relative;max-width:340px;width:100%;}
@@ -110,12 +156,13 @@
   .disc-body p:last-child{margin-bottom:0;}
 
   @media print{
-    .topbar,.panel,.actions,.queue,.disclaimer,.sitefoot{display:none !important;}
+    .topbar,.panel,.actions,.queue,.disclaimer,.sitefoot,.mobile-tabs,.editor-bar{display:none !important;}
     .app{display:block;padding:0;}
     .stage{position:static;}
+    body:not(.printing-sheet) .stage{display:flex !important;}
     .stage-card{filter:none;margin:0 auto;}
     @page{size:A4 portrait;margin:8mm;}
-    body{background:#fff;}
+    body{background:#fff;padding-bottom:0 !important;}
     /* sheet mode: lay queued cards 3-up like the deck */
     body.printing-sheet .stage{display:none !important;}
     body.printing-sheet .print-sheet{
@@ -130,7 +177,6 @@
 <body>
   <div class="topbar">
     <h1>Card Maker</h1>
-    <p>Design one card at a time — it renders in your deck's exact style.</p>
   </div>
 
   <div class="app">
@@ -167,7 +213,7 @@
           <button data-v="icon" aria-pressed="false">Icon</button>
           <button data-v="image" aria-pressed="false">Image</button>
         </div>
-        <label class="chk" id="keepEmblemWrap" style="display:none;margin-top:10px;"><input type="checkbox" id="keepEmblem"> Keep emblem background</label>
+        <label class="chk" id="keepEmblemWrap" style="display:none;margin-top:10px;"><input type="checkbox" id="keepEmblem" checked> Keep emblem background</label>
       </div>
 
       <div class="field" id="iconPanel" style="display:none;">
@@ -239,7 +285,7 @@
       <div class="stage-card" id="preview"></div>
       <div class="actions">
         <button class="btn" id="addBtn">Add to print</button>
-        <span id="editControls" style="display:none;gap:10px;align-items:center;">
+        <span id="editControls" style="gap:10px;align-items:center;padding-bottom: 5px;">
           <button class="btn" id="updateBtn">Update card</button>
           <button class="btn alt" id="addNewBtn">Add as new</button>
           <button class="btn alt" id="doneBtn">Done</button>
@@ -248,7 +294,7 @@
         <button class="btn alt" id="copyBtn">Copy card HTML</button>
         <span class="copies">Copies <input type="text" id="f-copies" value="1"></span>
       </div>
-      <p id="editNote" class="qhint" style="display:none;"></p>
+      <p id="editNote" class="qhint"></p>
 
       <div class="disclaimer" id="disclaimer">
         <button class="disc-head" id="discToggle" type="button" aria-expanded="false" aria-controls="discBody">
@@ -257,13 +303,13 @@
         <div class="disc-body" id="discBody">
           <p>Nothing you type or design is collected, tracked, or sent to any server. There's no account, no analytics, no cookies.</p>
           <p>Your work in progress — the print queue — is saved locally in this browser so it's still here next time you visit. It never leaves your device, and clearing your browser data (or switching browser or device) starts you fresh.</p>
-          <p>The only request the page makes to the outside is to Google Fonts, to load the typefaces.</p>
+          <p>The only outside requests the page makes are to Google Fonts (for the typefaces) and, when you search for an icon, to the Iconify icon API. No personal data is sent in either.</p>
+          <p>Icons are from <a href="https://game-icons.net" target="_blank" rel="noopener" style="color:var(--ink);">game-icons.net</a>, by their respective authors, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener" style="color:var(--ink);">CC BY 3.0</a>.</p>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="queue" id="queueWrap">
+    <div class="queue" id="queueWrap">
     <div class="queue-head">
       <span class="qtitle">Print queue <em id="qcount">0</em></span>
       <div class="qactions">
@@ -273,6 +319,7 @@
     </div>
     <div class="tray" id="tray"></div>
     <p class="qhint" id="qhint">No cards yet — build one above and press “Add to print.”</p>
+    </div>
   </div>
 
   <div class="print-sheet" id="printSheet" aria-hidden="true"></div>
@@ -280,6 +327,27 @@
   <footer class="sitefoot">
     Game icons from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, by their respective authors, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. Icon search powered by the <a href="https://iconify.design" target="_blank" rel="noopener">Iconify</a> API.
   </footer>
+
+  <div class="editor-bar" id="editorBar">
+    <button type="button" class="btn" id="ebAdd">Add to print</button>
+    <button type="button" class="btn" id="ebUpdate">Update card</button>
+    <button type="button" class="btn alt" id="ebAddNew">Add as new</button>
+  </div>
+
+  <nav class="mobile-tabs" id="mobileTabs">
+    <button type="button" class="mtab" data-tab="preview" aria-selected="true">
+      <svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="9" r="2.4"/><path d="M8.5 18c.6-2 2-3 3.5-3s2.9 1 3.5 3"/></svg>
+      <span>Preview</span>
+    </button>
+    <button type="button" class="mtab" data-tab="editor" aria-selected="false">
+      <svg viewBox="0 0 24 24"><path d="M4 19 18 5l3 3L7 22H4z"/><path d="M14 8l3 3"/></svg>
+      <span>Editor</span>
+    </button>
+    <button type="button" class="mtab" data-tab="queue" aria-selected="false">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="5" rx="1.2"/><rect x="4" y="11" width="16" height="5" rx="1.2"/><path d="M4 19h11"/></svg>
+      <span>Queue<em id="mTabCount" style="display:none;"></em></span>
+    </button>
+  </nav>
 
   <div class="toast" id="toast"></div>
 
@@ -406,7 +474,7 @@ const state = {
   reshuffle:true, difficulty:'easy',
   customColor:'#7C9BE0', customLabel:'', showPack:true, showResh:true,
   artSource:'auto', iconName:'', iconBody:'', iconVB:'0 0 512 512',
-  iconColorMode:'card', iconColor:'#333333', imgData:'', imgContain:false, keepEmblem:false
+  iconColorMode:'card', iconColor:'#333333', imgData:'', imgContain:false, keepEmblem:true
 };
 let currentType = state.type;
 
@@ -627,25 +695,22 @@ function enterEdit(i){
   state.iconColorMode=state.iconColorMode||'card'; state.iconColor=state.iconColor||'#333333';
   state.imgData=state.imgData||''; state.imgContain=!!state.imgContain; state.keepEmblem=!!state.keepEmblem;
   applyState(queue[i].qty);
-  document.getElementById('addBtn').style.display='none';
-  document.getElementById('editControls').style.display='inline-flex';
-  const note=document.getElementById('editNote');
-  note.style.display='block';
-  note.textContent='Editing \u201C'+(state.name||'Untitled')+'\u201D (#'+(i+1)+') \u2014 press Update to save changes.';
+  document.body.classList.add('editing');
+  document.getElementById('editNote').textContent='Editing \u201C'+(state.name||'Untitled')+'\u201D (#'+(i+1)+') \u2014 press Update to save changes.';
   renderTray();
-  window.scrollTo({top:0,behavior:'smooth'});
+  setMobileTab('queue');
 }
 function exitEdit(){
   editingIndex=null;
-  document.getElementById('addBtn').style.display='';
-  document.getElementById('editControls').style.display='none';
-  document.getElementById('editNote').style.display='none';
+  document.body.classList.remove('editing');
+  document.getElementById('editNote').textContent='';
   renderTray();
 }
 
 function renderTray(){
   const tray=document.getElementById('tray');
   document.getElementById('qcount').textContent=total();
+  const mc=document.getElementById('mTabCount'); if(mc){ const t=total(); mc.textContent=t||''; mc.style.display=t?'inline':'none'; }
   document.getElementById('qhint').style.display=queue.length?'none':'block';
   tray.innerHTML = queue.map((it,i)=>{
     const html = it.state ? cardHTMLFor(it.state) : (it.html||'');
@@ -667,24 +732,30 @@ function renderTray(){
   });
 }
 
-document.getElementById('addBtn').onclick=()=>{
+function doAdd(){
   queue.push({ state:JSON.parse(JSON.stringify(state)), qty:readCopies() });
   save(); renderTray();
   toast('Added \u2014 '+total()+' card'+(total()!==1?'s':'')+' in queue');
-};
-document.getElementById('updateBtn').onclick=()=>{
+}
+function doUpdate(){
   if(editingIndex===null) return;
   queue[editingIndex]={ state:JSON.parse(JSON.stringify(state)), qty:readCopies() };
   save(); renderTray();
   document.getElementById('editNote').textContent='Saved changes to \u201C'+(state.name||'Untitled')+'\u201D (#'+(editingIndex+1)+').';
   toast('Card updated');
-};
-document.getElementById('addNewBtn').onclick=()=>{
+}
+function doAddNew(){
   queue.push({ state:JSON.parse(JSON.stringify(state)), qty:readCopies() });
   save(); exitEdit();
   toast('Added as new \u2014 '+total()+' in queue');
-};
+}
+document.getElementById('addBtn').onclick=doAdd;
+document.getElementById('updateBtn').onclick=doUpdate;
+document.getElementById('addNewBtn').onclick=doAddNew;
 document.getElementById('doneBtn').onclick=exitEdit;
+document.getElementById('ebAdd').onclick=doAdd;
+document.getElementById('ebUpdate').onclick=doUpdate;
+document.getElementById('ebAddNew').onclick=doAddNew;
 
 document.getElementById('clearBtn').onclick=()=>{
   if(!queue.length) return;
@@ -705,11 +776,21 @@ discToggle.addEventListener('click', e=>{ e.stopPropagation(); setDisc(!disc.cla
 document.addEventListener('click', e=>{ if(!disc.contains(e.target)) setDisc(false); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') setDisc(false); });
 
+/* ---- mobile tab bar ---- */
+function setMobileTab(t){
+  document.body.classList.remove('m-preview','m-editor','m-queue');
+  document.body.classList.add('m-'+t);
+  document.querySelectorAll('#mobileTabs .mtab').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===t));
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('#mobileTabs .mtab').forEach(b=> b.onclick=()=>setMobileTab(b.dataset.tab));
+
 load();
 renderTray();
 toggleCustom();
 toggleArt();
 updateNoneChip();
+setMobileTab('preview');
 render();
 </script>
 </body>
