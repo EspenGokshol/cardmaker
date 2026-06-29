@@ -26,7 +26,7 @@
     .app{grid-template-columns:360px minmax(0,1fr) 360px;max-width:1560px;}
     .app .queue{grid-column:auto;}
   }
-  @media (max-width:880px){
+  @media screen and (max-width:880px){
     .app{display:block;padding:0 16px 26px;}
     .stage{position:static !important;}
     .panel,.stage,.queue{display:none !important;}
@@ -132,6 +132,8 @@
   .thumb .rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
   .thumb .qty{position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.62);color:#fff;font-family:'Space Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;}
   .cap{font-size:10px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+  body.side-back .actions{display:none !important;}
+  body.side-back .editor-bar{display:none !important;}
   .qhint{color:var(--muted);font-size:13px;margin:2px 0 0;}
   .thumb{cursor:pointer;}
   .thumb-wrap.editing .thumb{outline:3px solid var(--gold);outline-offset:1px;}
@@ -165,23 +167,35 @@
     body{background:#fff;padding-bottom:0 !important;}
     /* sheet mode: lay queued cards 3-up like the deck */
     body.printing-sheet .stage{display:none !important;}
-    body.printing-sheet .print-sheet{
+    body.printing-sheet .print-sheet:not(.duplex){
       display:flex !important;flex-wrap:wrap;justify-content:center;gap:5mm 4mm;
     }
-    body.printing-sheet .print-sheet > div{
+    body.printing-sheet .print-sheet:not(.duplex) > div{
       zoom:0.64;page-break-inside:avoid;break-inside:avoid;
     }
+    /* duplex: fixed 3x3 grid per page, front page then mirrored back page */
+    body.printing-sheet .print-sheet.duplex{display:block !important;}
+    .print-sheet.duplex .sheet-page{
+      display:grid;grid-template-columns:repeat(3,216px);justify-content:center;align-content:start;
+      gap:6mm 8mm;page-break-after:always;break-after:page;
+    }
+    .print-sheet.duplex .sheet-page:last-child{page-break-after:auto;break-after:auto;}
+    .print-sheet.duplex .cardcell{zoom:0.6;}
+    .print-sheet.duplex .blank{width:216px;height:302px;}
   }
 </style>
 </head>
 <body>
   <div class="topbar">
     <h1>Card Maker</h1>
+    <p>Design one card at a time — it renders in your deck's exact style.</p>
   </div>
 
   <div class="app">
     <!-- CONTROLS -->
     <div class="panel">
+      <div class="field"><div class="seg" id="sideSeg"><button data-v="front" aria-pressed="true">Front</button><button data-v="back" aria-pressed="false">Card back</button></div></div>
+      <div id="frontControls">
       <div class="field">
         <label class="lab">Card style</label>
         <div class="seg" id="styleSeg">
@@ -278,6 +292,48 @@
           <label class="chk"><input type="checkbox" id="f-showresh" checked> Reshuffle pill</label>
         </div>
       </div>
+      </div><!-- /frontControls -->
+
+      <div id="backControls" style="display:none;">
+        <div class="field">
+          <label class="lab" for="b-title">Back title</label>
+          <input type="text" id="b-title" placeholder="(optional)">
+        </div>
+        <div class="field">
+          <label class="lab">Back colour</label>
+          <div class="types" id="backTypeGrid"></div>
+        </div>
+        <div class="field" id="backCustom" style="display:none;">
+          <div class="color-row">
+            <input type="color" id="b-color" value="#5A4FCF" aria-label="Back colour swatch">
+            <input type="text" id="b-hex" value="#5A4FCF" maxlength="7" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="#RRGGBB" aria-label="Back hex colour">
+          </div>
+        </div>
+        <div class="field">
+          <label class="lab">Back artwork</label>
+          <div class="seg" id="backArtSeg">
+            <button data-v="auto" aria-pressed="true">Emblem</button>
+            <button data-v="icon" aria-pressed="false">Icon</button>
+            <button data-v="image" aria-pressed="false">Image</button>
+          </div>
+        </div>
+        <div class="field" id="backIconPanel" style="display:none;">
+          <input type="text" id="b-iconSearch" placeholder="Search game-icons…" spellcheck="false" autocomplete="off">
+          <div class="icon-results" id="b-iconResults"></div>
+          <p class="qhint" id="b-iconStatus" style="margin-top:8px;"></p>
+          <label class="chk" style="margin-top:10px;"><input type="checkbox" id="b-iconOwn"> Give the icon its own colour</label>
+          <div class="color-row" id="b-iconColorRow" style="display:none;margin-top:8px;">
+            <input type="color" id="b-iconColorSwatch" value="#FFFFFF" aria-label="Back icon colour swatch">
+            <input type="text" id="b-iconColorHex" value="#FFFFFF" maxlength="7" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="#RRGGBB" aria-label="Back icon hex colour">
+          </div>
+        </div>
+        <div class="field" id="backImagePanel" style="display:none;">
+          <input type="file" id="b-imageFile" accept="image/*">
+          <label class="chk" style="margin-top:10px;"><input type="checkbox" id="b-imageContain" checked> Contain (don't crop)</label>
+          <p class="qhint" id="b-imageStatus" style="margin-top:8px;"></p>
+        </div>
+        <p class="qhint" style="margin-top:4px;">One shared back for the whole deck. Tick “back” on cards in the queue, then enable “Print on both sides” in the print dialog.</p>
+      </div>
     </div>
 
     <!-- PREVIEW -->
@@ -285,7 +341,7 @@
       <div class="stage-card" id="preview"></div>
       <div class="actions">
         <button class="btn" id="addBtn">Add to print</button>
-        <span id="editControls" style="gap:10px;align-items:center;padding-bottom: 5px;">
+        <span id="editControls" style="gap:10px;align-items:center;">
           <button class="btn" id="updateBtn">Update card</button>
           <button class="btn alt" id="addNewBtn">Add as new</button>
           <button class="btn alt" id="doneBtn">Done</button>
@@ -313,6 +369,7 @@
     <div class="queue-head">
       <span class="qtitle">Print queue <em id="qcount">0</em></span>
       <div class="qactions">
+        <label class="chk" id="printBacksWrap"><input type="checkbox" id="printBacks"> Print backs (double-sided)</label>
         <button class="btn" id="printSheetBtn">Print sheet</button>
         <button class="btn alt" id="clearBtn">Clear all</button>
       </div>
@@ -325,9 +382,9 @@
   <div class="print-sheet" id="printSheet" aria-hidden="true"></div>
 
   <footer class="sitefoot">
-  <span class="sitefoot-credit">Game icons from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, by their respective authors, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. Icon search powered by the <a href="https://iconify.design" target="_blank" rel="noopener">Iconify</a> API.</span><br>
-  <a href='https://ko-fi.com/Q8E4221LT4' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
-</footer>
+    <span class="sitefoot-credit">Game icons from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, by their respective authors, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. Icon search powered by the <a href="https://iconify.design" target="_blank" rel="noopener">Iconify</a> API.</span><br>
+    <a href='https://ko-fi.com/Q8E4221LT4' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+  </footer>
 
   <div class="editor-bar" id="editorBar">
     <button type="button" class="btn" id="ebAdd">Add to print</button>
@@ -365,8 +422,8 @@ const BASE = {
   Fighting:'#C0392B', Electric:'#D9A521', Dragon:'#5A4FCF'
 };
 
-function colors(type){
-  const base = (type==='None') ? (state.customColor||'#7C9BE0') : BASE[type];
+function colors(type, customBase){
+  const base = (type==='None') ? (customBase||state.customColor||'#7C9BE0') : BASE[type];
   return {
     base, accent:base,
     deep: mix(base,'#000000',0.34),
@@ -390,6 +447,7 @@ function colors(type){
 }
 
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const nl2br = s => esc(s).replace(/\r\n|\r|\n/g,'<br>');
 const up = s => esc(s).toUpperCase();
 
 /* ---- emblems ---- */
@@ -454,18 +512,18 @@ function artInner(c, h, emb, embBg, cardIconColor){
 }
 
 function renderStandard(c){
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interior};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">${esc(state.category)}</div></div>${orbStd(c)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washA},${c.washB});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,148,emblemStandard(c),emblemStandard(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${esc(state.effect)}</div></div>${footer(c.washA,c.deep)}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interior};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">${esc(state.category)}</div></div>${orbStd(c)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washA},${c.washB});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,148,emblemStandard(c),emblemStandard(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${nl2br(state.effect)}</div></div>${footer(c.washA,c.deep)}</div></div>`;
 }
 
 function renderUltimate(c){
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(155deg,#0F0D0C,#241F1B 55%,#0F0D0C);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 0 2px #C9A24B,inset 0 0 0 4px rgba(0,0,0,.6);position:relative;"><div style="height:100%;border-radius:12px;background:linear-gradient(165deg,#221E1B,#100E0D);color:#F3E9D2;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(201,162,75,.5);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeUlt()}<div style="font-family:'Anton',sans-serif;font-size:29px;line-height:.92;color:#F6ECD0;letter-spacing:.5px;text-shadow:0 0 14px rgba(232,199,102,.45);">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8C766;">&#x25C6; ${esc(state.category)} &#x25C6;</div></div>${orb(c,52)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,#2A2018,#100E0D);box-shadow:inset 0 0 0 1px rgba(201,162,75,.4);">${artInner(c,148,emblemUltimate(),emblemUltimate(true),'#E8C766')}</div><div style="margin:11px 14px 0;background:rgba(255,255,255,.07);border-radius:10px;border:1px solid rgba(201,162,75,.25);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#F3E9D2;">${esc(state.effect)}</div></div>${footer('rgba(201,162,75,.15)','#E8C766')}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(155deg,#0F0D0C,#241F1B 55%,#0F0D0C);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 0 2px #C9A24B,inset 0 0 0 4px rgba(0,0,0,.6);position:relative;"><div style="height:100%;border-radius:12px;background:linear-gradient(165deg,#221E1B,#100E0D);color:#F3E9D2;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(201,162,75,.5);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeUlt()}<div style="font-family:'Anton',sans-serif;font-size:29px;line-height:.92;color:#F6ECD0;letter-spacing:.5px;text-shadow:0 0 14px rgba(232,199,102,.45);">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8C766;">&#x25C6; ${esc(state.category)} &#x25C6;</div></div>${orb(c,52)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,#2A2018,#100E0D);box-shadow:inset 0 0 0 1px rgba(201,162,75,.4);">${artInner(c,148,emblemUltimate(),emblemUltimate(true),'#E8C766')}</div><div style="margin:11px 14px 0;background:rgba(255,255,255,.07);border-radius:10px;border:1px solid rgba(201,162,75,.25);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#F3E9D2;">${nl2br(state.effect)}</div></div>${footer('rgba(201,162,75,.15)','#E8C766')}</div></div>`;
 }
 
 function renderChallenge(c){
   const diff = {easy:['Easy',1], medium:['Medium',2], hard:['Hard',3]}[state.difficulty];
   let pips='';
   for(let i=0;i<3;i++){ pips += `<span style="flex:none;width:22px;height:7px;border-radius:4px;background:${i<diff[1]?c.accent:'rgba(0,0,0,.12)'};"></span>`; }
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interiorC};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">&#x2692; ${esc(state.category)}</div></div>${orb(c,55)}</div><div style="margin:8px 14px 0;display:flex;align-items:center;gap:9px;"><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.deep};">${diff[0]}</span>${pips}</div><div style="margin:10px 14px 0;height:100px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washAc},${c.washBc});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,100,emblemChallenge(c),emblemChallenge(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${esc(state.effect)}</div></div>${footer(c.washAc,c.deep)}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interiorC};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">&#x2692; ${esc(state.category)}</div></div>${orb(c,55)}</div><div style="margin:8px 14px 0;display:flex;align-items:center;gap:9px;"><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.deep};">${diff[0]}</span>${pips}</div><div style="margin:10px 14px 0;height:100px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washAc},${c.washBc});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,100,emblemChallenge(c),emblemChallenge(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${nl2br(state.effect)}</div></div>${footer(c.washAc,c.deep)}</div></div>`;
 }
 
 /* ---- state ---- */
@@ -494,7 +552,7 @@ function cardHTMLFor(st){
   return h;
 }
 function render(){
-  document.getElementById('preview').innerHTML = cardHTML();
+  document.getElementById('preview').innerHTML = (side==='back') ? backHTML() : cardHTML();
   document.getElementById('diffField').style.display = (state.style==='challenge') ? 'block' : 'none';
 }
 
@@ -685,6 +743,7 @@ function applyState(qty){
 function enterEdit(i){
   if(!queue[i].state){ toast('This card was saved before editing existed — re-add it to edit.'); return; }
   editingIndex=i;
+  setSide('front');
   Object.assign(state, JSON.parse(JSON.stringify(queue[i].state)));
   if(!state.type) state.type='Normal';
   state.customColor=state.customColor||'#7C9BE0';
@@ -764,11 +823,36 @@ document.getElementById('clearBtn').onclick=()=>{
 };
 document.getElementById('printSheetBtn').onclick=()=>{
   if(!queue.length){ toast('Queue is empty — add a card first'); return; }
-  document.getElementById('printSheet').innerHTML = queue.flatMap(it=>Array(it.qty).fill(it.state?cardHTMLFor(it.state):(it.html||''))).join('');
+  const sheet=document.getElementById('printSheet');
+  const fronts=[];
+  queue.forEach(it=>{ const f=it.state?cardHTMLFor(it.state):(it.html||''); for(let k=0;k<it.qty;k++) fronts.push(f); });
+  const withBacks=document.getElementById('printBacks').checked;
+  if(!withBacks){
+    sheet.className='print-sheet';
+    sheet.innerHTML = fronts.join('');
+  } else {
+    sheet.className='print-sheet duplex';
+    const bHTML=backHTML();
+    const cols=3, per=9; let pages='';
+    const cell=h=> h ? '<div class="cardcell">'+h+'</div>' : '<div class="blank"></div>';
+    for(let p=0;p<fronts.length;p+=per){
+      const slice=fronts.slice(p,p+per);
+      while(slice.length%cols!==0) slice.push(null);            // pad to full rows
+      pages+='<div class="sheet-page">'+slice.map(f=> f?cell(f):cell(null)).join('')+'</div>';
+      // back page: every card backed; mirror each row of cols for long-edge duplex
+      const backs=slice.map(f=> f?bHTML:null);
+      let mirrored=[];
+      for(let r=0;r<backs.length;r+=cols) mirrored=mirrored.concat(backs.slice(r,r+cols).reverse());
+      pages+='<div class="sheet-page">'+mirrored.map(cell).join('')+'</div>';
+    }
+    sheet.innerHTML=pages;
+  }
   document.body.classList.add('printing-sheet');
   window.print();
 };
-window.addEventListener('afterprint', ()=> document.body.classList.remove('printing-sheet'));
+window.addEventListener('afterprint', ()=>{ document.body.classList.remove('printing-sheet'); });
+
+document.getElementById('printBacks').onchange=e=>{ try{ localStorage.setItem('pbpb', e.target.checked?'1':'0'); }catch(_){} };
 
 /* ---- disclaimer infobox ---- */
 const disc=document.getElementById('disclaimer'), discToggle=document.getElementById('discToggle');
@@ -786,12 +870,130 @@ function setMobileTab(t){
 }
 document.querySelectorAll('#mobileTabs .mtab').forEach(b=> b.onclick=()=>setMobileTab(b.dataset.tab));
 
+/* ---- shared card back ---- */
+let side='front';
+let back={ title:'', type:'Dragon', customColor:'#5A4FCF', artSource:'auto', iconName:'', iconBody:'', iconVB:'0 0 512 512', iconColorMode:'auto', iconColor:'#FFFFFF', imgData:'', imgContain:true };
+function saveBack(){ try{ localStorage.setItem('pbback', JSON.stringify(back)); }catch(e){} }
+function loadBack(){ try{ const r=localStorage.getItem('pbback'); if(r) back=Object.assign(back, JSON.parse(r)); }catch(e){} }
+function lum(hexv){ const a=hx(hexv); return 0.299*a[0]+0.587*a[1]+0.114*a[2]; }
+
+function backArt(c){
+  const txt = lum(c.base)<150 ? '#FFFFFF' : '#23201A';
+  if(back.artSource==='icon' && back.iconBody){
+    const col = back.iconColorMode==='custom' ? back.iconColor : txt;
+    return `<div style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;color:${col};"><svg viewBox="${back.iconVB}" style="width:100%;height:100%;fill:currentColor;">${back.iconBody}</svg></div>`;
+  }
+  if(back.artSource==='image' && back.imgData){
+    return `<div style="width:240px;height:240px;"><img src="${back.imgData}" alt="" style="width:100%;height:100%;object-fit:${back.imgContain!==false?'contain':'cover'};border-radius:8px;"></div>`;
+  }
+  return `<div style="position:relative;width:220px;height:220px;">${emblemStandard(c)}</div>`;
+}
+function backHTML(){
+  const c = colors(back.type, back.customColor);
+  const txt = lum(c.base)<150 ? '#FFFFFF' : '#23201A';
+  const title = back.title ? `<div style="font-family:'Anton',sans-serif;font-size:30px;line-height:1.02;color:${txt};text-align:center;padding:0 24px;letter-spacing:.5px;">${esc(back.title)}</div>` : '';
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);"><div style="height:100%;border-radius:12px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 42%,${c.base},${c.deep});display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);">${backArt(c)}${title}</div></div>`;
+}
+
+function setSide(s){
+  side=s;
+  document.getElementById('sideSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===s));
+  document.getElementById('frontControls').style.display = s==='back'?'none':'';
+  document.getElementById('backControls').style.display = s==='back'?'block':'none';
+  document.body.classList.toggle('side-back', s==='back');
+  render();
+}
+document.getElementById('sideSeg').querySelectorAll('button').forEach(b=> b.onclick=()=>setSide(b.dataset.v));
+
+/* reusable game-icons picker */
+function wireIconPicker(searchEl, resultsEl, statusEl, apply){
+  let timer=null, seq=0;
+  const status=m=>{ statusEl.textContent=m||''; };
+  searchEl.addEventListener('input', e=>{ const v=e.target.value; clearTimeout(timer); timer=setTimeout(()=>run(v),300); });
+  async function run(q){
+    q=(q||'').trim();
+    if(q.length<2){ resultsEl.innerHTML=''; status('Type at least 2 letters to search.'); return; }
+    status('Searching\u2026'); const my=++seq;
+    try{
+      const r=await fetch(ICON_API+'/search?query='+encodeURIComponent(q)+'&limit=64&prefixes=game-icons');
+      const data=await r.json(); if(my!==seq) return;
+      const names=(data.icons||[]).filter(n=>n.indexOf('game-icons:')===0);
+      if(!names.length){ resultsEl.innerHTML=''; status('No icons found \u2014 try another word.'); return; }
+      status('');
+      resultsEl.innerHTML=names.map(n=>'<button type="button" data-name="'+n+'" title="'+n.replace('game-icons:','')+'"><img loading="lazy" alt="" src="'+ICON_API+'/'+n+'.svg?height=30&color=%23555555"></button>').join('');
+      resultsEl.querySelectorAll('button').forEach(b=> b.onclick=()=>pick(b.dataset.name,b));
+    }catch(e){ if(my===seq){ resultsEl.innerHTML=''; status('Couldn\u2019t reach the icon library \u2014 check your connection.'); } }
+  }
+  async function pick(fullName, btn){
+    const short=fullName.replace('game-icons:','');
+    try{
+      const r=await fetch(ICON_API+'/game-icons.json?icons='+encodeURIComponent(short));
+      const data=await r.json(); const ic=data.icons&&data.icons[short];
+      if(!ic){ status('Could not load that icon.'); return; }
+      resultsEl.querySelectorAll('button').forEach(x=>x.classList.remove('sel')); if(btn) btn.classList.add('sel');
+      status('Selected: '+short);
+      apply(ic.body, '0 0 '+(ic.width||data.width||512)+' '+(ic.height||data.height||512), fullName);
+    }catch(e){ status('Could not load that icon.'); }
+  }
+}
+
+/* back colour chips */
+const backGrid=document.getElementById('backTypeGrid');
+[...Object.keys(BASE),'None'].forEach(t=>{
+  const el=document.createElement('div'); el.className='chip'; el.dataset.v=t; el.setAttribute('aria-pressed', t===back.type);
+  const sw=(t==='None')?'background:linear-gradient(160deg,#cfcabf,#6f6a60);':(()=>{const c=colors(t);return `background:linear-gradient(160deg,${c.light},${c.deep});`;})();
+  el.innerHTML=`<div class="sw" style="${sw}"></div><span class="nm">${t}</span>`;
+  el.onclick=()=>{ back.type=t; [...backGrid.children].forEach(ch=>ch.setAttribute('aria-pressed',ch.dataset.v===t)); toggleBackCustom(); saveBack(); render(); };
+  backGrid.appendChild(el);
+});
+function toggleBackCustom(){ document.getElementById('backCustom').style.display = back.type==='None'?'block':'none'; }
+function updateBackNoneChip(){ const el=[...backGrid.children].find(ch=>ch.dataset.v==='None'); if(!el) return; const c=colors('None', back.customColor); el.querySelector('.sw').style.background=`linear-gradient(160deg,${c.light},${c.deep})`; }
+function toggleBackArt(){
+  document.getElementById('backIconPanel').style.display = back.artSource==='icon'?'block':'none';
+  document.getElementById('backImagePanel').style.display = back.artSource==='image'?'block':'none';
+}
+
+/* back controls wiring */
+document.getElementById('b-title').oninput=e=>{ back.title=e.target.value; saveBack(); render(); };
+const bColor=document.getElementById('b-color'), bHex=document.getElementById('b-hex');
+bColor.oninput=e=>{ back.customColor=e.target.value; bHex.value=e.target.value.toUpperCase(); bHex.classList.remove('bad'); updateBackNoneChip(); saveBack(); render(); };
+bHex.oninput=e=>{ const h=normHex(e.target.value); if(h){ bHex.classList.remove('bad'); back.customColor=h; bColor.value=h; updateBackNoneChip(); saveBack(); render(); } else bHex.classList.add('bad'); };
+bHex.onblur=()=>{ bHex.value=(back.customColor||'#5A4FCF').toUpperCase(); bHex.classList.remove('bad'); };
+document.getElementById('backArtSeg').querySelectorAll('button').forEach(b=>{ b.onclick=()=>{ back.artSource=b.dataset.v; document.getElementById('backArtSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); toggleBackArt(); saveBack(); render(); }; });
+wireIconPicker(document.getElementById('b-iconSearch'), document.getElementById('b-iconResults'), document.getElementById('b-iconStatus'), (body,vb,name)=>{ back.iconBody=body; back.iconVB=vb; back.iconName=name; saveBack(); render(); });
+const bIconOwn=document.getElementById('b-iconOwn'), bIconRow=document.getElementById('b-iconColorRow');
+const bIconSw=document.getElementById('b-iconColorSwatch'), bIconHex=document.getElementById('b-iconColorHex');
+bIconOwn.onchange=e=>{ back.iconColorMode=e.target.checked?'custom':'auto'; bIconRow.style.display=e.target.checked?'flex':'none'; saveBack(); render(); };
+bIconSw.oninput=e=>{ back.iconColor=e.target.value; bIconHex.value=e.target.value.toUpperCase(); bIconHex.classList.remove('bad'); saveBack(); render(); };
+bIconHex.oninput=e=>{ const h=normHex(e.target.value); if(h){ bIconHex.classList.remove('bad'); back.iconColor=h; bIconSw.value=h; saveBack(); render(); } else bIconHex.classList.add('bad'); };
+bIconHex.onblur=()=>{ bIconHex.value=(back.iconColor||'#FFFFFF').toUpperCase(); bIconHex.classList.remove('bad'); };
+document.getElementById('b-imageFile').onchange=async e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const st=document.getElementById('b-imageStatus'); st.textContent='Processing image\u2026'; try{ back.imgData=await processImage(f); saveBack(); st.textContent='Image added.'; render(); }catch(err){ st.textContent='Could not read that image.'; } };
+document.getElementById('b-imageContain').onchange=e=>{ back.imgContain=e.target.checked; saveBack(); render(); };
+
+function applyBackToControls(){
+  document.getElementById('b-title').value=back.title||'';
+  document.getElementById('b-color').value=back.customColor||'#5A4FCF';
+  document.getElementById('b-hex').value=(back.customColor||'#5A4FCF').toUpperCase();
+  [...backGrid.children].forEach(ch=>ch.setAttribute('aria-pressed', ch.dataset.v===back.type));
+  setSeg('backArtSeg', back.artSource||'auto');
+  bIconOwn.checked = back.iconColorMode==='custom'; bIconRow.style.display=bIconOwn.checked?'flex':'none';
+  bIconSw.value=back.iconColor||'#FFFFFF'; bIconHex.value=(back.iconColor||'#FFFFFF').toUpperCase();
+  document.getElementById('b-imageContain').checked = back.imgContain!==false;
+  document.getElementById('b-iconStatus').textContent = back.iconName?('Current: '+back.iconName.replace('game-icons:','')):'';
+  document.getElementById('b-imageStatus').textContent = back.imgData?'Image set.':'';
+  toggleBackCustom(); toggleBackArt(); updateBackNoneChip();
+}
+
 load();
+loadBack();
+try{ document.getElementById('printBacks').checked = (localStorage.getItem('pbpb')==='1'); }catch(_){}
+applyBackToControls();
 renderTray();
 toggleCustom();
 toggleArt();
 updateNoneChip();
 setMobileTab('preview');
+setSide('front');
 render();
 </script>
 </body>
