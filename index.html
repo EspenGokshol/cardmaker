@@ -248,6 +248,19 @@
       </div>
 
       <div class="field">
+        <label class="lab">Corner icon (top-right orb)</label>
+        <input type="text" id="orbIconSearch" placeholder="Search game-icons… (empty = type name)" spellcheck="false" autocomplete="off">
+        <div class="icon-results" id="orbIconResults"></div>
+        <p class="qhint" id="orbIconStatus" style="margin-top:8px;"></p>
+        <button type="button" class="btn alt" id="orbIconClear" style="margin-top:8px;display:none;">Clear icon (show type name)</button>
+      </div>
+
+      <div class="field">
+        <label class="lab" for="f-arth">Artwork height <span id="arthVal" style="color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none;"></span></label>
+        <input type="range" id="f-arth" min="70" max="240" step="2" style="width:100%;">
+      </div>
+
+      <div class="field">
         <label class="lab" for="f-name">Name</label>
         <input type="text" id="f-name" value="Tackle">
       </div>
@@ -300,6 +313,13 @@
           <input type="text" id="b-title" placeholder="(optional)">
         </div>
         <div class="field">
+          <label class="chk"><input type="checkbox" id="b-titleOwn"> Custom title colour</label>
+          <div class="color-row" id="b-titleColorRow" style="display:none;margin-top:8px;">
+            <input type="color" id="b-titleSwatch" value="#FFFFFF" aria-label="Title colour swatch">
+            <input type="text" id="b-titleHex" value="#FFFFFF" maxlength="7" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="#RRGGBB" aria-label="Title hex colour">
+          </div>
+        </div>
+        <div class="field">
           <label class="lab">Back colour</label>
           <div class="types" id="backTypeGrid"></div>
         </div>
@@ -316,6 +336,7 @@
             <button data-v="icon" aria-pressed="false">Icon</button>
             <button data-v="image" aria-pressed="false">Image</button>
           </div>
+          <label class="chk" id="b-keepEmblemWrap" style="display:none;margin-top:10px;"><input type="checkbox" id="b-keepEmblem"> Keep emblem background</label>
         </div>
         <div class="field" id="backIconPanel" style="display:none;">
           <input type="text" id="b-iconSearch" placeholder="Search game-icons…" spellcheck="false" autocomplete="off">
@@ -480,7 +501,12 @@ function emblemChallenge(c, bgOnly){
 
 /* ---- card renderers ---- */
 function typeLabel(){ return (state.type==='None') ? (state.customLabel||'') : state.type; }
-function orbInner(){ const t=typeLabel(); return t ? `<span style="font-size:8.5px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.95);">${up(t)}</span>` : ''; }
+function orbInner(){
+  if(state.orbIconBody){
+    return `<svg viewBox="${state.orbIconVB}" style="width:26px;height:26px;fill:currentColor;color:rgba(255,255,255,.95);">${state.orbIconBody}</svg>`;
+  }
+  const t=typeLabel(); return t ? `<span style="font-size:8.5px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.95);">${up(t)}</span>` : '';
+}
 function orb(c, mid){
   return `<div style="width:48px;height:48px;border-radius:50%;flex:none;background:radial-gradient(circle at 32% 28%,${c.orbLight},${c.base} ${mid}%,${c.orbDeep});box-shadow:inset 0 -3px 7px rgba(0,0,0,.4),0 0 12px ${c.glow};display:flex;align-items:center;justify-content:center;">${orbInner()}</div>`;
 }
@@ -512,18 +538,18 @@ function artInner(c, h, emb, embBg, cardIconColor){
 }
 
 function renderStandard(c){
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interior};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">${esc(state.category)}</div></div>${orbStd(c)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washA},${c.washB});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,148,emblemStandard(c),emblemStandard(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${nl2br(state.effect)}</div></div>${footer(c.washA,c.deep)}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interior};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">${esc(state.category)}</div></div>${orbStd(c)}</div><div style="margin:10px 14px 0;height:${artH()}px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washA},${c.washB});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,artH(),emblemStandard(c),emblemStandard(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${nl2br(state.effect)}</div></div>${footer(c.washA,c.deep)}</div></div>`;
 }
 
 function renderUltimate(c){
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(155deg,#0F0D0C,#241F1B 55%,#0F0D0C);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 0 2px #C9A24B,inset 0 0 0 4px rgba(0,0,0,.6);position:relative;"><div style="height:100%;border-radius:12px;background:linear-gradient(165deg,#221E1B,#100E0D);color:#F3E9D2;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(201,162,75,.5);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeUlt()}<div style="font-family:'Anton',sans-serif;font-size:29px;line-height:.92;color:#F6ECD0;letter-spacing:.5px;text-shadow:0 0 14px rgba(232,199,102,.45);">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8C766;">&#x25C6; ${esc(state.category)} &#x25C6;</div></div>${orb(c,52)}</div><div style="margin:10px 14px 0;height:148px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,#2A2018,#100E0D);box-shadow:inset 0 0 0 1px rgba(201,162,75,.4);">${artInner(c,148,emblemUltimate(),emblemUltimate(true),'#E8C766')}</div><div style="margin:11px 14px 0;background:rgba(255,255,255,.07);border-radius:10px;border:1px solid rgba(201,162,75,.25);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#F3E9D2;">${nl2br(state.effect)}</div></div>${footer('rgba(201,162,75,.15)','#E8C766')}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(155deg,#0F0D0C,#241F1B 55%,#0F0D0C);box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 0 0 2px #C9A24B,inset 0 0 0 4px rgba(0,0,0,.6);position:relative;"><div style="height:100%;border-radius:12px;background:linear-gradient(165deg,#221E1B,#100E0D);color:#F3E9D2;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(201,162,75,.5);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeUlt()}<div style="font-family:'Anton',sans-serif;font-size:29px;line-height:.92;color:#F6ECD0;letter-spacing:.5px;text-shadow:0 0 14px rgba(232,199,102,.45);">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8C766;">&#x25C6; ${esc(state.category)} &#x25C6;</div></div>${orb(c,52)}</div><div style="margin:10px 14px 0;height:${artH()}px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,#2A2018,#100E0D);box-shadow:inset 0 0 0 1px rgba(201,162,75,.4);">${artInner(c,artH(),emblemUltimate(),emblemUltimate(true),'#E8C766')}</div><div style="margin:11px 14px 0;background:rgba(255,255,255,.07);border-radius:10px;border:1px solid rgba(201,162,75,.25);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#F3E9D2;">${nl2br(state.effect)}</div></div>${footer('rgba(201,162,75,.15)','#E8C766')}</div></div>`;
 }
 
 function renderChallenge(c){
   const diff = {easy:['Easy',1], medium:['Medium',2], hard:['Hard',3]}[state.difficulty];
   let pips='';
   for(let i=0;i<3;i++){ pips += `<span style="flex:none;width:22px;height:7px;border-radius:4px;background:${i<diff[1]?c.accent:'rgba(0,0,0,.12)'};"></span>`; }
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interiorC};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">&#x2692; ${esc(state.category)}</div></div>${orb(c,55)}</div><div style="margin:8px 14px 0;display:flex;align-items:center;gap:9px;"><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.deep};">${diff[0]}</span>${pips}</div><div style="margin:10px 14px 0;height:100px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washAc},${c.washBc});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,100,emblemChallenge(c),emblemChallenge(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${nl2br(state.effect)}</div></div>${footer(c.washAc,c.deep)}</div></div>`;
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);position:relative;"><div style="height:100%;border-radius:12px;background:${c.interiorC};display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);"><div style="padding:14px 14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="display:flex;flex-direction:column;gap:5px;min-width:0;">${badgeStd(c)}<div style="font-family:'Anton',sans-serif;font-size:32px;line-height:.92;color:${c.nameDark};letter-spacing:.5px;">${esc(state.name)}</div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.accent};">&#x2692; ${esc(state.category)}</div></div>${orb(c,55)}</div><div style="margin:8px 14px 0;display:flex;align-items:center;gap:9px;"><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${c.deep};">${diff[0]}</span>${pips}</div><div style="margin:10px 14px 0;height:${artH()}px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 46%,${c.washAc},${c.washBc});box-shadow:inset 0 0 0 1px ${c.ringSoft};">${artInner(c,artH(),emblemChallenge(c),emblemChallenge(c,true),c.deep)}</div><div style="margin:11px 14px 0;background:#fff;border-radius:10px;border:1px solid rgba(0,0,0,.08);padding:13px;flex:1;overflow:hidden;"><div style="font-size:16px;line-height:1.36;color:#23302A;">${nl2br(state.effect)}</div></div>${footer(c.washAc,c.deep)}</div></div>`;
 }
 
 /* ---- state ---- */
@@ -533,9 +559,13 @@ const state = {
   reshuffle:true, difficulty:'easy',
   customColor:'#7C9BE0', customLabel:'', showPack:true, showResh:true,
   artSource:'auto', iconName:'', iconBody:'', iconVB:'0 0 512 512',
-  iconColorMode:'card', iconColor:'#333333', imgData:'', imgContain:false, keepEmblem:true
+  iconColorMode:'card', iconColor:'#333333', imgData:'', imgContain:false, keepEmblem:true,
+  orbIconName:'', orbIconBody:'', orbIconVB:'0 0 512 512', artHeight:null
 };
 let currentType = state.type;
+const DEFAULTS = JSON.parse(JSON.stringify(state));
+const ART_DEFAULT = { standard:148, ultimate:148, challenge:100 };
+function artH(){ return (state.artHeight>0) ? state.artHeight : (ART_DEFAULT[state.style]||148); }
 
 function cardHTML(){
   currentType = state.type;
@@ -546,7 +576,7 @@ function cardHTML(){
 }
 function cardHTMLFor(st){
   const prev=JSON.parse(JSON.stringify(state)), prevType=currentType;
-  Object.assign(state, st); currentType=state.type;
+  Object.assign(state, DEFAULTS, st); currentType=state.type;
   const h=cardHTML();
   Object.assign(state, prev); currentType=prevType;
   return h;
@@ -581,8 +611,13 @@ function seg(id, key){
     b.onclick=()=>{ state[key]=b.dataset.v; box.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); render(); };
   });
 }
-seg('styleSeg','style');
 seg('diffSeg','difficulty');
+document.getElementById('styleSeg').querySelectorAll('button').forEach(b=>{
+  b.onclick=()=>{ state.style=b.dataset.v; document.getElementById('styleSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); state.artHeight=null; syncArtH(); render(); };
+});
+const arthInp=document.getElementById('f-arth');
+function syncArtH(){ const v=artH(); arthInp.value=v; document.getElementById('arthVal').textContent=v+'px'; }
+arthInp.oninput=e=>{ state.artHeight=+e.target.value; document.getElementById('arthVal').textContent=state.artHeight+'px'; render(); };
 
 document.getElementById('f-name').oninput   = e=>{ state.name=e.target.value; render(); };
 document.getElementById('f-cat').oninput    = e=>{ state.category=e.target.value; render(); };
@@ -680,6 +715,20 @@ document.getElementById('imageFile').onchange=async e=>{
   catch(err){ st.textContent='Could not read that image.'; }
 };
 document.getElementById('imageContain').onchange=e=>{ state.imgContain=e.target.checked; render(); };
+
+/* corner/orb icon picker */
+wireIconPicker(document.getElementById('orbIconSearch'), document.getElementById('orbIconResults'), document.getElementById('orbIconStatus'), (body,vb,name)=>{
+  state.orbIconName=name; state.orbIconBody=body; state.orbIconVB=vb;
+  document.getElementById('orbIconClear').style.display='inline-block';
+  render();
+});
+document.getElementById('orbIconClear').onclick=()=>{
+  state.orbIconName=''; state.orbIconBody=''; state.orbIconVB='0 0 512 512';
+  document.getElementById('orbIconClear').style.display='none';
+  document.getElementById('orbIconSearch').value=''; document.getElementById('orbIconResults').innerHTML='';
+  document.getElementById('orbIconStatus').textContent='';
+  render();
+};
 document.getElementById('f-showpack').onchange = e=>{ state.showPack=e.target.checked; render(); };
 document.getElementById('f-showresh').onchange = e=>{ state.showResh=e.target.checked; render(); };
 
@@ -736,7 +785,10 @@ function applyState(qty){
   document.getElementById('iconSearch').value=''; document.getElementById('iconResults').innerHTML='';
   iconStatus(state.iconName?('Current: '+state.iconName.replace('game-icons:','')):'');
   document.getElementById('imageStatus').textContent = state.imgData?'Image set.':'';
-  toggleCustom(); updateNoneChip();
+  document.getElementById('orbIconSearch').value=''; document.getElementById('orbIconResults').innerHTML='';
+  document.getElementById('orbIconStatus').textContent = state.orbIconName?('Current: '+state.orbIconName.replace('game-icons:','')):'';
+  document.getElementById('orbIconClear').style.display = state.orbIconBody?'inline-block':'none';
+  toggleCustom(); updateNoneChip(); syncArtH();
   render();
 }
 
@@ -744,7 +796,7 @@ function enterEdit(i){
   if(!queue[i].state){ toast('This card was saved before editing existed — re-add it to edit.'); return; }
   editingIndex=i;
   setSide('front');
-  Object.assign(state, JSON.parse(JSON.stringify(queue[i].state)));
+  Object.assign(state, DEFAULTS, JSON.parse(JSON.stringify(queue[i].state)));
   if(!state.type) state.type='Normal';
   state.customColor=state.customColor||'#7C9BE0';
   state.customLabel=state.customLabel||'';
@@ -754,6 +806,7 @@ function enterEdit(i){
   state.iconBody=state.iconBody||''; state.iconVB=state.iconVB||'0 0 512 512'; state.iconName=state.iconName||'';
   state.iconColorMode=state.iconColorMode||'card'; state.iconColor=state.iconColor||'#333333';
   state.imgData=state.imgData||''; state.imgContain=!!state.imgContain; state.keepEmblem=!!state.keepEmblem;
+  state.orbIconName=state.orbIconName||''; state.orbIconBody=state.orbIconBody||''; state.orbIconVB=state.orbIconVB||'0 0 512 512';
   applyState(queue[i].qty);
   document.body.classList.add('editing');
   document.getElementById('editNote').textContent='Editing \u201C'+(state.name||'Untitled')+'\u201D (#'+(i+1)+') \u2014 press Update to save changes.';
@@ -872,7 +925,7 @@ document.querySelectorAll('#mobileTabs .mtab').forEach(b=> b.onclick=()=>setMobi
 
 /* ---- shared card back ---- */
 let side='front';
-let back={ title:'', type:'Dragon', customColor:'#5A4FCF', artSource:'auto', iconName:'', iconBody:'', iconVB:'0 0 512 512', iconColorMode:'auto', iconColor:'#FFFFFF', imgData:'', imgContain:true };
+let back={ title:'', type:'Dragon', customColor:'#5A4FCF', artSource:'auto', iconName:'', iconBody:'', iconVB:'0 0 512 512', iconColorMode:'auto', iconColor:'#FFFFFF', imgData:'', imgContain:true, titleColorMode:'auto', titleColor:'#FFFFFF', keepEmblem:false };
 function saveBack(){ try{ localStorage.setItem('pbback', JSON.stringify(back)); }catch(e){} }
 function loadBack(){ try{ const r=localStorage.getItem('pbback'); if(r) back=Object.assign(back, JSON.parse(r)); }catch(e){} }
 function lum(hexv){ const a=hx(hexv); return 0.299*a[0]+0.587*a[1]+0.114*a[2]; }
@@ -890,9 +943,10 @@ function backArt(c){
 }
 function backHTML(){
   const c = colors(back.type, back.customColor);
-  const txt = lum(c.base)<150 ? '#FFFFFF' : '#23201A';
-  const title = back.title ? `<div style="font-family:'Anton',sans-serif;font-size:30px;line-height:1.02;color:${txt};text-align:center;padding:0 24px;letter-spacing:.5px;">${esc(back.title)}</div>` : '';
-  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);"><div style="height:100%;border-radius:12px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 42%,${c.base},${c.deep});display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);">${backArt(c)}${title}</div></div>`;
+  const titleCol = back.titleColorMode==='custom' ? back.titleColor : (lum(c.base)<150 ? '#FFFFFF' : '#23201A');
+  const title = back.title ? `<div style="font-family:'Anton',sans-serif;font-size:30px;line-height:1.02;color:${titleCol};text-align:center;padding:0 24px;letter-spacing:.5px;">${esc(back.title)}</div>` : '';
+  const bg = (back.keepEmblem && back.artSource!=='auto') ? emblemStandard(c, true) : '';
+  return `<div style="flex:none;width:360px;height:503px;border-radius:20px;padding:11px;background:linear-gradient(160deg,${c.light},${c.deep});box-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.18);"><div style="height:100%;border-radius:12px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 42%,${c.base},${c.deep});box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);">${bg}<div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;">${backArt(c)}${title}</div></div></div>`;
 }
 
 function setSide(s){
@@ -951,10 +1005,18 @@ function updateBackNoneChip(){ const el=[...backGrid.children].find(ch=>ch.datas
 function toggleBackArt(){
   document.getElementById('backIconPanel').style.display = back.artSource==='icon'?'block':'none';
   document.getElementById('backImagePanel').style.display = back.artSource==='image'?'block':'none';
+  document.getElementById('b-keepEmblemWrap').style.display = back.artSource==='auto'?'none':'flex';
 }
 
 /* back controls wiring */
 document.getElementById('b-title').oninput=e=>{ back.title=e.target.value; saveBack(); render(); };
+const bTitleOwn=document.getElementById('b-titleOwn'), bTitleRow=document.getElementById('b-titleColorRow');
+const bTitleSw=document.getElementById('b-titleSwatch'), bTitleHex=document.getElementById('b-titleHex');
+bTitleOwn.onchange=e=>{ back.titleColorMode=e.target.checked?'custom':'auto'; bTitleRow.style.display=e.target.checked?'flex':'none'; saveBack(); render(); };
+bTitleSw.oninput=e=>{ back.titleColor=e.target.value; bTitleHex.value=e.target.value.toUpperCase(); bTitleHex.classList.remove('bad'); saveBack(); render(); };
+bTitleHex.oninput=e=>{ const h=normHex(e.target.value); if(h){ bTitleHex.classList.remove('bad'); back.titleColor=h; bTitleSw.value=h; saveBack(); render(); } else bTitleHex.classList.add('bad'); };
+bTitleHex.onblur=()=>{ bTitleHex.value=(back.titleColor||'#FFFFFF').toUpperCase(); bTitleHex.classList.remove('bad'); };
+document.getElementById('b-keepEmblem').onchange=e=>{ back.keepEmblem=e.target.checked; saveBack(); render(); };
 const bColor=document.getElementById('b-color'), bHex=document.getElementById('b-hex');
 bColor.oninput=e=>{ back.customColor=e.target.value; bHex.value=e.target.value.toUpperCase(); bHex.classList.remove('bad'); updateBackNoneChip(); saveBack(); render(); };
 bHex.oninput=e=>{ const h=normHex(e.target.value); if(h){ bHex.classList.remove('bad'); back.customColor=h; bColor.value=h; updateBackNoneChip(); saveBack(); render(); } else bHex.classList.add('bad'); };
@@ -979,6 +1041,9 @@ function applyBackToControls(){
   bIconOwn.checked = back.iconColorMode==='custom'; bIconRow.style.display=bIconOwn.checked?'flex':'none';
   bIconSw.value=back.iconColor||'#FFFFFF'; bIconHex.value=(back.iconColor||'#FFFFFF').toUpperCase();
   document.getElementById('b-imageContain').checked = back.imgContain!==false;
+  bTitleOwn.checked = back.titleColorMode==='custom'; bTitleRow.style.display = bTitleOwn.checked?'flex':'none';
+  bTitleSw.value = back.titleColor||'#FFFFFF'; bTitleHex.value=(back.titleColor||'#FFFFFF').toUpperCase(); bTitleHex.classList.remove('bad');
+  document.getElementById('b-keepEmblem').checked = !!back.keepEmblem;
   document.getElementById('b-iconStatus').textContent = back.iconName?('Current: '+back.iconName.replace('game-icons:','')):'';
   document.getElementById('b-imageStatus').textContent = back.imgData?'Image set.':'';
   toggleBackCustom(); toggleBackArt(); updateBackNoneChip();
@@ -992,6 +1057,7 @@ renderTray();
 toggleCustom();
 toggleArt();
 updateNoneChip();
+syncArtH();
 setMobileTab('preview');
 setSide('front');
 render();
